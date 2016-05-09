@@ -337,7 +337,7 @@ void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
   *         For STM32F031: (0..15) for GPIOA, GPIOB, (13..15) for GPIOC and (0..1, 6..7) for GPIOF. 
   * @retval The output port pin value.
   */
-/*uint8_t GPIO_ReadOutputDataBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
+uint8_t GPIO_ReadOutputDataBit(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin)
 {
   uint8_t bitstatus = 0x00;
 
@@ -354,7 +354,7 @@ void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct)
     bitstatus = (uint8_t)Bit_RESET;
   }
   return bitstatus;
-}*/
+}
 
 /**
   * @brief  Reads the specified GPIO output data port.

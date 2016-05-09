@@ -2016,7 +2016,7 @@ FlagStatus USART_GetFlagStatus(USART_TypeDef* USARTx, uint32_t USART_FLAG)
   *            @arg USART_FLAG_ORE:  OverRun Error flag.
   *            @arg USART_FLAG_NE: Noise Error flag.
   *            @arg USART_FLAG_FE: Framing Error flag.
-  *            @arg USART_FLAG_PE:   Parity Errorflag.
+  *            @arg USART_FLAG_PE:   Parity Error flag.
   *   
   * @note     RXNE pending bit is cleared by a read to the USART_RDR register 
   *           (USART_ReceiveData()) or by writing 1 to the RXFRQ in the register
