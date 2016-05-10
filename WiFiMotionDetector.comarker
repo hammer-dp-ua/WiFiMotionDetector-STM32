@@ -2,7 +2,7 @@
 <breakpoints>
 <breakpoint enabled="false" persistant="true" registered="true">
 <resource path="/WiFiMotionDetector/main.c" type="1"/>
-<marker lineNumber="898" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
+<marker lineNumber="958" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
 <attrib name="enabled" value="false"/>
 <attrib name="org.eclipse.cdt.debug.core.condition" value=""/>
 <attrib name="org.eclipse.debug.core.id" value="org.eclipse.cdt.debug.core"/>
@@ -12,32 +12,57 @@
 <attrib name="persistant" value="true"/>
 <attrib name="org.eclipse.cdt.debug.core.breakpointType" value="0"/>
 <attrib name="workingset_id" value="org.eclipse.debug.ui.breakpointWorkingSet"/>
-<attrib name="message" value="Line breakpoint: main.c [line: 822]"/>
+<attrib name="message" value="Line breakpoint: main.c [line: 958]"/>
 <attrib name="registered" value="true"/>
 <attrib name="path" value="/WiFiMotionDetector/main.c"/>
 <attrib name="org.eclipse.cdt.debug.core.sourceHandle" value="D:\USER\CoIDE\workspace\WiFiMotionDetector\app\main.c"/>
-<attrib name="org.eclipse.debug.core.enabled" value="false"/>
 <attrib name="org.eclipse.cdt.debug.core.ignoreCount" value="0"/>
+<attrib name="org.eclipse.debug.core.enabled" value="false"/>
 </marker>
 </breakpoint>
-<breakpoint enabled="false" persistant="true" registered="true">
+<breakpoint enabled="true" persistant="true" registered="true">
 <resource path="/WiFiMotionDetector/main.c" type="1"/>
-<marker lineNumber="295" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
-<attrib name="enabled" value="false"/>
+<marker lineNumber="524" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
+<attrib name="message" value="Line breakpoint: main.c [line: 519]"/>
 <attrib name="org.eclipse.cdt.debug.core.condition" value=""/>
 <attrib name="org.eclipse.debug.core.id" value="org.eclipse.cdt.debug.core"/>
-<attrib name="workingset_name" value=""/>
 <attrib name="org.eclipse.cdt.debug.core.installCount" value="0"/>
-<attrib name="type" value="org.eclipse.cdt.debug.core.cLineBreakpointMarker"/>
-<attrib name="persistant" value="true"/>
-<attrib name="org.eclipse.cdt.debug.core.breakpointType" value="0"/>
-<attrib name="workingset_id" value="org.eclipse.debug.ui.breakpointWorkingSet"/>
-<attrib name="message" value="Line breakpoint: main.c [line: 274]"/>
-<attrib name="registered" value="true"/>
-<attrib name="path" value="/WiFiMotionDetector/main.c"/>
 <attrib name="org.eclipse.cdt.debug.core.sourceHandle" value="D:\USER\CoIDE\workspace\WiFiMotionDetector\app\main.c"/>
+<attrib name="org.eclipse.cdt.debug.core.breakpointType" value="0"/>
 <attrib name="org.eclipse.cdt.debug.core.ignoreCount" value="0"/>
-<attrib name="org.eclipse.debug.core.enabled" value="false"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="workingset_name" value=""/>
+<attrib name="workingset_id" value="org.eclipse.debug.ui.breakpointWorkingSet"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/WiFiMotionDetector/main.c" type="1"/>
+<marker lineNumber="509" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
+<attrib name="message" value="Line breakpoint: main.c [line: 504]"/>
+<attrib name="org.eclipse.cdt.debug.core.condition" value=""/>
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.cdt.debug.core"/>
+<attrib name="org.eclipse.cdt.debug.core.installCount" value="0"/>
+<attrib name="org.eclipse.cdt.debug.core.sourceHandle" value="D:\USER\CoIDE\workspace\WiFiMotionDetector\app\main.c"/>
+<attrib name="org.eclipse.cdt.debug.core.breakpointType" value="0"/>
+<attrib name="org.eclipse.cdt.debug.core.ignoreCount" value="0"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="workingset_name" value=""/>
+<attrib name="workingset_id" value="org.eclipse.debug.ui.breakpointWorkingSet"/>
+</marker>
+</breakpoint>
+<breakpoint enabled="true" persistant="true" registered="true">
+<resource path="/WiFiMotionDetector/main.c" type="1"/>
+<marker lineNumber="172" type="org.eclipse.cdt.debug.core.cLineBreakpointMarker">
+<attrib name="message" value="Line breakpoint: main.c [line: 172]"/>
+<attrib name="org.eclipse.cdt.debug.core.condition" value=""/>
+<attrib name="org.eclipse.debug.core.id" value="org.eclipse.cdt.debug.core"/>
+<attrib name="org.eclipse.cdt.debug.core.installCount" value="0"/>
+<attrib name="org.eclipse.cdt.debug.core.sourceHandle" value="D:\USER\CoIDE\workspace\WiFiMotionDetector\app\main.c"/>
+<attrib name="org.eclipse.cdt.debug.core.breakpointType" value="0"/>
+<attrib name="org.eclipse.cdt.debug.core.ignoreCount" value="0"/>
+<attrib name="org.eclipse.debug.core.enabled" value="true"/>
+<attrib name="workingset_name" value=""/>
+<attrib name="workingset_id" value="org.eclipse.debug.ui.breakpointWorkingSet"/>
 </marker>
 </breakpoint>
 </breakpoints>

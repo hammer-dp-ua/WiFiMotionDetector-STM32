@@ -44,7 +44,8 @@
 #define TIMER3_PERIOD_S (TIMER3_PERIOD_MS / 1000)
 #define TIMER3_100MS (unsigned short)(100 / TIMER3_PERIOD_MS)
 #define TIMER6_1S 10
-#define TIMER6_2S 10
+#define TIMER6_2S 20
+#define TIMER6_5S 50
 #define TIMER6_10S 100
 #define TIMER6_30S 300
 
@@ -93,10 +94,16 @@ volatile unsigned short send_usart_data_errors_counter;
 volatile unsigned short network_searching_status_led_counter;
 volatile unsigned short response_timeout_timer;
 volatile unsigned char esp8266_disabled_counter;
+volatile unsigned char esp8266_disabled_timer = TIMER6_5S;
+
 volatile unsigned short usart_overrun_errors_counter;
+volatile unsigned short usart_overrun_errors_counter_prev;
 volatile unsigned short usart_idle_line_detection_counter;
+volatile unsigned short usart_idle_line_detection_counter_prev;
 volatile unsigned short usart_noise_detection_counter;
+volatile unsigned short usart_noise_detection_counter_prev;
 volatile unsigned short usart_framing_errors_counter;
+volatile unsigned short usart_framing_errors_counter_prev;
 
 void Clock_Config();
 void Pins_Config();
@@ -135,7 +142,7 @@ void get_current_default_wifi_mode();
 void set_default_wifi_mode();
 void enable_esp8266();
 void disable_esp8266();
-unsigned char is_esp8266_enabled();
+unsigned char is_esp8266_enabled(unsigned char include_timer);
 void clear_piped_request_commands_to_send();
 void delete_all_piped_tasks();
 
@@ -150,15 +157,19 @@ void TIM6_DAC_IRQHandler() {
    TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
 
    response_timeout_timer++;
-   if (!is_esp8266_enabled()) {
+   if (!is_esp8266_enabled(0)) {
       esp8266_disabled_counter++;
+   }
+   if (esp8266_disabled_timer > 0) {
+      esp8266_disabled_timer--;
    }
 }
 
 void TIM3_IRQHandler() {
    TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 
-   if (usart_received_bytes > 0) {
+   // Some error eventually occurs when only the first symbol is exists
+   if (usart_received_bytes > 0 && usart_data_received_buffer[1] != 0) {
       usart_received_bytes = 0;
       set_flag(&general_flags, USART_DATA_RECEIVED_FLAG);
    }
@@ -169,15 +180,7 @@ void TIM3_IRQHandler() {
 }
 
 void USART1_IRQHandler() {
-   if (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET) {
-      TIM_SetCounter(TIM3, 0);
-      usart_data_received_buffer[usart_received_bytes] = USART_ReceiveData(USART1);
-      usart_received_bytes++;
-
-      if (usart_received_bytes >= USART_DATA_RECEIVED_BUFFER_SIZE) {
-         usart_received_bytes = 0;
-      }
-   } else if (USART_GetFlagStatus(USART1, USART_FLAG_ORE)) {
+   if (USART_GetFlagStatus(USART1, USART_FLAG_ORE)) {
       USART_ClearITPendingBit(USART1, USART_IT_ORE);
       USART_ClearFlag(USART1, USART_FLAG_ORE);
       usart_overrun_errors_counter++;
@@ -193,6 +196,14 @@ void USART1_IRQHandler() {
       USART_ClearITPendingBit(USART1, USART_IT_ORE);
       USART_ClearFlag(USART1, USART_FLAG_FE);
       usart_framing_errors_counter++;
+   } else if (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET) {
+      TIM_SetCounter(TIM3, 0);
+      usart_data_received_buffer[usart_received_bytes] = USART_ReceiveData(USART1);
+      usart_received_bytes++;
+
+      if (usart_received_bytes >= USART_DATA_RECEIVED_BUFFER_SIZE) {
+         usart_received_bytes = 0;
+      }
    }
 }
 
@@ -211,7 +222,7 @@ int main() {
    add_piped_task_to_send_into_tail(OBTAIN_CONNECTION_STATUS_FLAG);
 
    while (1) {
-      if (is_esp8266_enabled()) {
+      if (is_esp8266_enabled(1)) {
          // Seconds
          unsigned char send_usart_data_passed_time = (unsigned char)(TIMER3_PERIOD_S * send_usart_data_timer_counter);
 
@@ -326,7 +337,7 @@ int main() {
             }
          }
 
-         if (response_timeout_timer > TIMER6_30S && !current_piped_task_to_send) {
+         if (response_timeout_timer > TIMER6_10S && !current_piped_task_to_send) {
             response_timeout_timer = 0;
 
             if (read_flag_state(&general_flags, SENDING_USART_ERRORS_OVERFLOW_FLAG)) {
@@ -356,7 +367,7 @@ int main() {
             successfully_received_flags = 0;
             sent_flag = 0;
          }
-      } else if (esp8266_disabled_counter >= TIMER6_2S) {
+      } else if (esp8266_disabled_counter >= TIMER6_1S) {
          esp8266_disabled_counter = 0;
          enable_esp8266();
       }
@@ -500,6 +511,11 @@ void set_appropriate_successfully_recieved_flag() {
       char *data_to_be_contained[] = {ESP8226_RESPONSE_SUCCSESSFULLY_SENT, ESP8226_RESPONSE_PREFIX};
       if (is_usart_response_contains_elements(data_to_be_contained, 2)) {
          set_flag(&successfully_received_flags, GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
+
+         usart_overrun_errors_counter_prev = usart_overrun_errors_counter;
+         usart_idle_line_detection_counter_prev = usart_idle_line_detection_counter;
+         usart_noise_detection_counter_prev = usart_noise_detection_counter;
+         usart_framing_errors_counter_prev = usart_framing_errors_counter;
       } else {
          send_usart_data_errors_counter++;
       }
@@ -701,15 +717,15 @@ void Pins_Config() {
 
 /**
  * USART frame time Tfr = (1 / USART_BAUD_RATE) * 10bits
- * Timer time to be sure the frame is ended Tt = Tfr + 0.5Tfr
+ * Timer time to be sure the frame is ended Tt = Tfr + 0.5 * Tfr
  * Frequency = 16Mhz, USART_BAUD_RATE = 115200. Tt = 0.13ms
  */
 void TIMER3_Confing() {
-   DBGMCU_APB1PeriphConfig(DBGMCU_TIM3_STOP, DISABLE);
+   DBGMCU_APB1PeriphConfig(DBGMCU_TIM3_STOP, ENABLE);
    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-   TIM_TimeBaseStructure.TIM_Period = CLOCK_SPEED * 15 / USART_BAUD_RATE;
+   TIM_TimeBaseStructure.TIM_Period = CLOCK_SPEED * 15 / USART_BAUD_RATE; // CLOCK_SPEED * 15 / USART_BAUD_RATE;
    TIM_TimeBaseStructure.TIM_Prescaler = 0;
    TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
    TIM_TimeBaseStructure.TIM_CounterMode = TIM_CounterMode_Up;
@@ -725,7 +741,7 @@ void TIMER3_Confing() {
  * 0.1s with 16MHz clock
  */
 void TIMER6_Confing() {
-   DBGMCU_APB1PeriphConfig(DBGMCU_TIM6_STOP, DISABLE);
+   DBGMCU_APB1PeriphConfig(DBGMCU_TIM6_STOP, ENABLE);
    RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM6, ENABLE);
 
    TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
@@ -950,12 +966,14 @@ void clear_usart_data_received_buffer() {
 
 void enable_esp8266() {
    GPIO_WriteBit(GPIOA, GPIO_Pin_12, Bit_RESET);
+   esp8266_disabled_timer = TIMER6_5S;
 }
 
 void disable_esp8266() {
    GPIO_WriteBit(GPIOA, GPIO_Pin_12, Bit_SET);
 }
 
-unsigned char is_esp8266_enabled() {
-   return !GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_12);
+unsigned char is_esp8266_enabled(unsigned char include_timer) {
+   return include_timer ? (!GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_12) && esp8266_disabled_timer == 0) :
+         !GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_12);
 }
