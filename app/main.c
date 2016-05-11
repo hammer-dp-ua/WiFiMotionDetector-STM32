@@ -80,7 +80,9 @@ char ESP8226_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "192.16
 char ESP8226_REQUEST_GET_CURRENT_DEFAULT_WIFI_MODE[] __attribute__ ((section(".text.const"))) = "AT+CWMODE_DEF?\r\n";
 char ESP8226_RESPONSE_WIFI_MODE_PREFIX[] __attribute__ ((section(".text.const"))) = "+CWMODE_DEF:";
 char ESP8226_RESPONSE_WIFI_STATION_MODE[] __attribute__ ((section(".text.const"))) = "1";
-char ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE[] __attribute__ ((section(".text.const"))) = "AT+CWMODE_DEF=1";
+char ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE[] __attribute__ ((section(".text.const"))) = "AT+CWMODE_DEF=1\r\n";
+char ESP8226_REQUEST_GET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF?\r\n";
+char ESP8226_RESPONSE_CURRENT_OWN_IP_ADDRESS_PREFIX[] __attribute__ ((section(".text.const"))) = "+CIPSTA:ip:";
 
 char *usart_data_to_be_transmitted_buffer = NULL;
 char usart_data_received_buffer[USART_DATA_RECEIVED_BUFFER_SIZE];
@@ -145,6 +147,7 @@ void disable_esp8266();
 unsigned char is_esp8266_enabled(unsigned char include_timer);
 void clear_piped_request_commands_to_send();
 void delete_all_piped_tasks();
+void execute_function_for_current_piped_task(unsigned short current_piped_task_to_send);
 
 void DMA1_Channel2_3_IRQHandler() {
    DMA_ClearITPendingBit(DMA1_IT_TC2);
@@ -169,7 +172,7 @@ void TIM3_IRQHandler() {
    TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 
    // Some error eventually occurs when only the first symbol is exists
-   if (usart_received_bytes > 0 && usart_data_received_buffer[1] != 0) {
+   if (usart_received_bytes > 0 && usart_data_received_buffer[2] != 0) {
       usart_received_bytes = 0;
       set_flag(&general_flags, USART_DATA_RECEIVED_FLAG);
    }
@@ -218,7 +221,7 @@ int main() {
 
    add_piped_task_to_send_into_tail(DISABLE_ECHO_FLAG);
    add_piped_task_to_send_into_tail(GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
-   //add_piped_task_to_send_into_tail(GET_OWN_IP_ADDRESS_FLAG);
+   add_piped_task_to_send_into_tail(GET_OWN_IP_ADDRESS_FLAG);
    add_piped_task_to_send_into_tail(OBTAIN_CONNECTION_STATUS_FLAG);
 
    while (1) {
@@ -298,31 +301,18 @@ int main() {
             if (read_flag_state(&successfully_received_flags, SET_DEFAULT_STATION_WIFI_MODE_FLAG)) {
                on_successfully_receive_general_actions(SET_DEFAULT_STATION_WIFI_MODE_FLAG);
             }
+            if (read_flag_state(&successfully_received_flags, GET_OWN_IP_ADDRESS_FLAG)) {
+               on_successfully_receive_general_actions(GET_OWN_IP_ADDRESS_FLAG);
+
+               unsigned char some_another_ip = !is_usart_response_contains_element(ESP8226_OWN_IP_ADDRESS);
+               if (some_another_ip) {
+
+               }
+            }
          }
 
          unsigned short current_piped_task_to_send = get_current_piped_task_to_send();
-
-         if (send_usart_data_function == NULL && current_piped_task_to_send) {
-            if (current_piped_task_to_send == DISABLE_ECHO_FLAG) {
-               execute_usart_data_sending(disable_echo, 2);
-            } else if (current_piped_task_to_send == OBTAIN_CONNECTION_STATUS_FLAG) {
-               execute_usart_data_sending(get_connection_status, 2);
-            } else if (current_piped_task_to_send == GET_VISIBLE_NETWORK_LIST_FLAG) {
-               execute_usart_data_sending(get_network_list, 30);
-            } else if (current_piped_task_to_send == CONNECT_TO_NETWORK_FLAG) {
-               execute_usart_data_sending(connect_to_network, 10);
-            } else if (current_piped_task_to_send == CONNECT_TO_SERVER_FLAG) {
-               execute_usart_data_sending(connect_to_server, 2);
-            } else if (current_piped_task_to_send == BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG) {
-               execute_usart_data_sending(set_bytes_amount_to_send, 2);
-            } else if (current_piped_task_to_send == GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG) {
-               execute_usart_data_sending(send_request, 2);
-            } else if (current_piped_task_to_send == GET_CURRENT_DEFAULT_WIFI_MODE_FLAG) {
-               execute_usart_data_sending(get_current_default_wifi_mode, 2);
-            } else if (current_piped_task_to_send == SET_DEFAULT_STATION_WIFI_MODE_FLAG) {
-               execute_usart_data_sending(set_default_wifi_mode, 2);
-            }
-         }
+         execute_function_for_current_piped_task(current_piped_task_to_send);
 
          // LED blinking
          if (network_searching_status_led_counter >= TIMER3_100MS && !read_flag_state(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG)) {
@@ -374,77 +364,30 @@ int main() {
    }
 }
 
-void get_current_default_wifi_mode() {
-   send_usard_data(ESP8226_REQUEST_GET_CURRENT_DEFAULT_WIFI_MODE);
-   set_flag(&sent_flag, GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
-}
-
-void set_default_wifi_mode() {
-   send_usard_data(ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE);
-   set_flag(&sent_flag, SET_DEFAULT_STATION_WIFI_MODE_FLAG);
-}
-
-void action_on_response() {
-   clear_piped_request_commands_to_send();
-}
-
-/**
- * address, port and request shall be allocated with malloc. Later they will be removed with free
- */
-void send_usart_get_request(char address[], char port[], char request[], void (*execute_on_response)()) {
-   clear_piped_request_commands_to_send();
-   char *parameters[] = {address, port, NULL};
-   piped_request_commands_to_send[PIPED_REQUEST_CIPSTART_COMMAND_INDEX] = set_string_parameters(ESP8226_REQUEST_CONNECT_TO_SERVER, parameters);
-
-   unsigned short request_length = get_string_length(request);
-   char *request_length_string = short_to_string(request_length);
-   char *start_sending_parameters[] = {request_length_string, NULL};
-   piped_request_commands_to_send[PIPED_REQUEST_CIPSEND_COMMAND_INDEX] = set_string_parameters(ESP8226_REQUEST_START_SENDING, start_sending_parameters);
-   free(request_length_string);
-   piped_request_commands_to_send[PIPED_REQUEST_INDEX] = request;
-
-   on_response = execute_on_response;
-
-   add_piped_task_to_send_into_tail(CONNECT_TO_SERVER_FLAG);
-   add_piped_task_to_send_into_tail(BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
-   add_piped_task_to_send_into_tail(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
-}
-
-void clear_piped_request_commands_to_send() {
-   for (unsigned char i = 0; i < PIPED_REQUEST_COMMANDS_TO_SEND_SIZE; i++) {
-      char *command = piped_request_commands_to_send[i];
-      if (command != NULL) {
-         free(command);
-         piped_request_commands_to_send[i] = NULL;
+void execute_function_for_current_piped_task(unsigned short current_piped_task_to_send) {
+   if (send_usart_data_function == NULL && current_piped_task_to_send) {
+      if (current_piped_task_to_send == DISABLE_ECHO_FLAG) {
+         execute_usart_data_sending(disable_echo, 2);
+      } else if (current_piped_task_to_send == OBTAIN_CONNECTION_STATUS_FLAG) {
+         execute_usart_data_sending(get_connection_status, 2);
+      } else if (current_piped_task_to_send == GET_VISIBLE_NETWORK_LIST_FLAG) {
+         execute_usart_data_sending(get_network_list, 30);
+      } else if (current_piped_task_to_send == CONNECT_TO_NETWORK_FLAG) {
+         execute_usart_data_sending(connect_to_network, 10);
+      } else if (current_piped_task_to_send == CONNECT_TO_SERVER_FLAG) {
+         execute_usart_data_sending(connect_to_server, 2);
+      } else if (current_piped_task_to_send == BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG) {
+         execute_usart_data_sending(set_bytes_amount_to_send, 2);
+      } else if (current_piped_task_to_send == GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG) {
+         execute_usart_data_sending(send_request, 2);
+      } else if (current_piped_task_to_send == GET_CURRENT_DEFAULT_WIFI_MODE_FLAG) {
+         execute_usart_data_sending(get_current_default_wifi_mode, 2);
+      } else if (current_piped_task_to_send == SET_DEFAULT_STATION_WIFI_MODE_FLAG) {
+         execute_usart_data_sending(set_default_wifi_mode, 2);
+      } else if (current_piped_task_to_send == GET_OWN_IP_ADDRESS_FLAG) {
+         execute_usart_data_sending(get_own_ip_address, 5);
       }
    }
-}
-
-void connect_to_server() {
-   if (piped_request_commands_to_send[PIPED_REQUEST_CIPSTART_COMMAND_INDEX] == NULL) {
-      return;
-   }
-
-   send_usard_data(piped_request_commands_to_send[PIPED_REQUEST_CIPSTART_COMMAND_INDEX]);
-   set_flag(&sent_flag, CONNECT_TO_SERVER_FLAG);
-}
-
-void set_bytes_amount_to_send() {
-   if (piped_request_commands_to_send[PIPED_REQUEST_CIPSEND_COMMAND_INDEX] == NULL) {
-      return;
-   }
-
-   send_usard_data(piped_request_commands_to_send[PIPED_REQUEST_CIPSEND_COMMAND_INDEX]);
-   set_flag(&sent_flag, BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
-}
-
-void send_request() {
-   if (piped_request_commands_to_send[PIPED_REQUEST_INDEX] == NULL) {
-      return;
-   }
-
-   send_usard_data(piped_request_commands_to_send[PIPED_REQUEST_INDEX]);
-   set_flag(&sent_flag, GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
 }
 
 void set_appropriate_successfully_recieved_flag() {
@@ -538,6 +481,94 @@ void set_appropriate_successfully_recieved_flag() {
          send_usart_data_errors_counter++;
       }
    }
+   if (read_flag_state(&sent_flag, GET_OWN_IP_ADDRESS_FLAG)) {
+      reset_flag(&sent_flag, GET_OWN_IP_ADDRESS_FLAG);
+
+      if (is_usart_response_contains_element(ESP8226_OWN_IP_ADDRESS) ||
+            is_usart_response_contains_element(ESP8226_RESPONSE_CURRENT_OWN_IP_ADDRESS_PREFIX)) {
+         set_flag(&successfully_received_flags, GET_OWN_IP_ADDRESS_FLAG);
+      } else {
+         send_usart_data_errors_counter++;
+      }
+   }
+}
+
+void get_own_ip_address() {
+   send_usard_data(ESP8226_REQUEST_GET_OWN_IP_ADDRESS);
+   set_flag(&sent_flag, GET_OWN_IP_ADDRESS_FLAG);
+}
+
+void get_current_default_wifi_mode() {
+   send_usard_data(ESP8226_REQUEST_GET_CURRENT_DEFAULT_WIFI_MODE);
+   set_flag(&sent_flag, GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
+}
+
+void set_default_wifi_mode() {
+   send_usard_data(ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE);
+   set_flag(&sent_flag, SET_DEFAULT_STATION_WIFI_MODE_FLAG);
+}
+
+void action_on_response() {
+   clear_piped_request_commands_to_send();
+}
+
+/**
+ * address, port and request shall be allocated with malloc. Later they will be removed with free
+ */
+void send_usart_get_request(char address[], char port[], char request[], void (*execute_on_response)()) {
+   clear_piped_request_commands_to_send();
+   char *parameters[] = {address, port, NULL};
+   piped_request_commands_to_send[PIPED_REQUEST_CIPSTART_COMMAND_INDEX] = set_string_parameters(ESP8226_REQUEST_CONNECT_TO_SERVER, parameters);
+
+   unsigned short request_length = get_string_length(request);
+   char *request_length_string = short_to_string(request_length);
+   char *start_sending_parameters[] = {request_length_string, NULL};
+   piped_request_commands_to_send[PIPED_REQUEST_CIPSEND_COMMAND_INDEX] = set_string_parameters(ESP8226_REQUEST_START_SENDING, start_sending_parameters);
+   free(request_length_string);
+   piped_request_commands_to_send[PIPED_REQUEST_INDEX] = request;
+
+   on_response = execute_on_response;
+
+   add_piped_task_to_send_into_tail(CONNECT_TO_SERVER_FLAG);
+   add_piped_task_to_send_into_tail(BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
+   add_piped_task_to_send_into_tail(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
+}
+
+void clear_piped_request_commands_to_send() {
+   for (unsigned char i = 0; i < PIPED_REQUEST_COMMANDS_TO_SEND_SIZE; i++) {
+      char *command = piped_request_commands_to_send[i];
+      if (command != NULL) {
+         free(command);
+         piped_request_commands_to_send[i] = NULL;
+      }
+   }
+}
+
+void connect_to_server() {
+   if (piped_request_commands_to_send[PIPED_REQUEST_CIPSTART_COMMAND_INDEX] == NULL) {
+      return;
+   }
+
+   send_usard_data(piped_request_commands_to_send[PIPED_REQUEST_CIPSTART_COMMAND_INDEX]);
+   set_flag(&sent_flag, CONNECT_TO_SERVER_FLAG);
+}
+
+void set_bytes_amount_to_send() {
+   if (piped_request_commands_to_send[PIPED_REQUEST_CIPSEND_COMMAND_INDEX] == NULL) {
+      return;
+   }
+
+   send_usard_data(piped_request_commands_to_send[PIPED_REQUEST_CIPSEND_COMMAND_INDEX]);
+   set_flag(&sent_flag, BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
+}
+
+void send_request() {
+   if (piped_request_commands_to_send[PIPED_REQUEST_INDEX] == NULL) {
+      return;
+   }
+
+   send_usard_data(piped_request_commands_to_send[PIPED_REQUEST_INDEX]);
+   set_flag(&sent_flag, GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
 }
 
 void on_successfully_receive_general_actions(unsigned short successfully_received_flag) {
