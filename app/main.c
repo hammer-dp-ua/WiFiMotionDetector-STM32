@@ -14,9 +14,11 @@
 #define USART1_TDR_ADDRESS (unsigned int)(&(USART1->TDR))
 #define NETWORK_STATUS_LED_PIN GPIO_Pin_1
 #define NETWORK_STATUS_LED_PORT GPIOA
+#define SERVER_AVAILABILITI_LED_PIN GPIO_Pin_2
+#define SERVER_AVAILABILITI_LED_PORT GPIOA
 
 #define USART_DATA_RECEIVED_FLAG 1
-#define NETWORK_SEARCHING_STATUS_LED_FLAG 2
+#define SERVER_IS_AVAILABLE_FLAG 2
 #define SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG 4
 #define SENDING_USART_ERRORS_OVERFLOW_FLAG 8
 
@@ -24,7 +26,7 @@
 #define DISABLE_ECHO_FLAG 2
 #define CONNECT_TO_NETWORK_FLAG 4
 #define CONNECTION_STATUS_FLAG 8
-#define OBTAIN_CONNECTION_STATUS_FLAG 16
+#define GET_CONNECTION_STATUS_AND_CONNECT_FLAG 16
 #define GET_OWN_IP_ADDRESS_FLAG 32
 #define SET_OWN_IP_ADDRESS_FLAG 64
 #define CONNECT_TO_SERVER_FLAG 128
@@ -34,6 +36,8 @@
 #define GET_CURRENT_DEFAULT_WIFI_MODE_FLAG 2048
 #define SET_DEFAULT_STATION_WIFI_MODE_FLAG 4096
 #define CLOSE_CONNECTION_FLAG 8192
+#define GET_CONNECTION_STATUS_FLAG 16384
+#define GET_SERVER_AVAILABILITY_FLAG 32768
 
 #define USART_DATA_RECEIVED_BUFFER_SIZE 500
 #define PIPED_REQUEST_COMMANDS_TO_SEND_SIZE 3
@@ -51,6 +55,7 @@
 #define TIMER6_5S 50
 #define TIMER6_10S 100
 #define TIMER6_30S 300
+#define TIMER6_60S 600
 
 unsigned int piped_tasks_to_send[PIPED_TASKS_TO_SEND_SIZE];
 char *piped_request_commands_to_send[PIPED_REQUEST_COMMANDS_TO_SEND_SIZE]; // AT+CIPSTART="TCP","address",port; AT+CIPSEND=bytes_to_send; request
@@ -81,6 +86,7 @@ char ESP8226_RESPONSE_SUCCSESSFULLY_SENT[] __attribute__ ((section(".text.const"
 char ESP8226_RESPONSE_ALREADY_CONNECTED[] __attribute__ ((section(".text.const"))) = "ALREADY CONNECTED";
 char ESP8226_RESPONSE_PREFIX[] __attribute__ ((section(".text.const"))) = "+IPD";
 char ESP8226_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "192.168.0.20";
+char ESP8226_SERVER_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "192.168.0.2";
 char ESP8226_REQUEST_GET_CURRENT_DEFAULT_WIFI_MODE[] __attribute__ ((section(".text.const"))) = "AT+CWMODE_DEF?\r\n";
 char ESP8226_RESPONSE_WIFI_MODE_PREFIX[] __attribute__ ((section(".text.const"))) = "+CWMODE_DEF:";
 char ESP8226_RESPONSE_WIFI_STATION_MODE[] __attribute__ ((section(".text.const"))) = "1";
@@ -88,6 +94,8 @@ char ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE[] __attribute__ ((section(".t
 char ESP8226_REQUEST_GET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF?\r\n";
 char ESP8226_RESPONSE_CURRENT_OWN_IP_ADDRESS_PREFIX[] __attribute__ ((section(".text.const"))) = "+CIPSTA_DEF:ip:";
 char ESP8226_REQUEST_SET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF=\"{1}\"\r\n";
+char ESP8226_REQUEST_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) = "GET /server/esp8266/test HTTP/1.1\r\nHost: {1}\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
+char ESP8226_RESPONSE_OK_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
 
 char *usart_data_to_be_transmitted_buffer = NULL;
 char usart_data_received_buffer[USART_DATA_RECEIVED_BUFFER_SIZE];
@@ -103,6 +111,7 @@ volatile unsigned short response_timeout_timer;
 volatile unsigned char esp8266_disabled_counter;
 volatile unsigned char esp8266_disabled_timer = TIMER6_5S;
 volatile unsigned char resending_requests_counter;
+volatile unsigned short checking_connection_status_and_server_availability_counter;
 
 volatile unsigned short usart_overrun_errors_counter;
 volatile unsigned short usart_idle_line_detection_counter;
@@ -131,14 +140,14 @@ unsigned char contains_string(char being_compared_string[], char string_to_be_co
 void clear_usart_data_received_buffer();
 void *set_string_parameters(char string[], char *parameters[]);
 unsigned short get_string_length(char string[]);
-unsigned short get_current_piped_task_to_send();
+unsigned int get_current_piped_task_to_send();
 void remove_current_piped_task_to_send();
 void add_piped_task_to_send_into_tail(unsigned int task);
 void add_piped_task_to_send_into_head(unsigned int task);
 void delete_piped_task(unsigned int task);
 void on_successfully_receive_general_actions(unsigned short successfully_received_flag);
-void send_usart_get_request(char address[], char port[], char request[], void (*on_response)());
-void resend_usart_get_request();
+void send_usart_get_request(char address[], char port[], char request[], void (*on_response)(), unsigned int final_task);
+void resend_usart_get_request(unsigned int final_task);
 void *short_to_string(unsigned short number);
 void connect_to_server();
 void set_bytes_amount_to_send();
@@ -152,10 +161,12 @@ unsigned char is_esp8266_enabled(unsigned char include_timer);
 void clear_piped_request_commands_to_send();
 void delete_all_piped_tasks();
 void execute_function_for_current_piped_task(unsigned short current_piped_task_to_send, unsigned char send_usart_data_passed_time_sec);
+void get_server_avalability();
 void get_own_ip_address();
 void set_own_ip_address();
 void close_connection();
 void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag_value, char to_be_contained_in_response[]);
+void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send);
 
 void DMA1_Channel2_3_IRQHandler() {
    DMA_ClearITPendingBit(DMA1_IT_TC2);
@@ -168,6 +179,7 @@ void TIM6_DAC_IRQHandler() {
    TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
 
    response_timeout_timer++;
+   checking_connection_status_and_server_availability_counter++;
    if (!is_esp8266_enabled(0)) {
       esp8266_disabled_counter++;
    }
@@ -230,7 +242,8 @@ int main() {
    add_piped_task_to_send_into_tail(DISABLE_ECHO_FLAG);
    add_piped_task_to_send_into_tail(GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
    add_piped_task_to_send_into_tail(GET_OWN_IP_ADDRESS_FLAG);
-   add_piped_task_to_send_into_tail(OBTAIN_CONNECTION_STATUS_FLAG);
+   add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
+   add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
 
    while (1) {
       if (is_esp8266_enabled(1)) {
@@ -261,17 +274,29 @@ int main() {
             if (read_flag_state(&successfully_received_flags, DISABLE_ECHO_FLAG)) {
                on_successfully_receive_general_actions(DISABLE_ECHO_FLAG);
             }
-            if (read_flag_state(&successfully_received_flags, OBTAIN_CONNECTION_STATUS_FLAG)) {
-               on_successfully_receive_general_actions(OBTAIN_CONNECTION_STATUS_FLAG);
+            if (read_flag_state(&successfully_received_flags, GET_CONNECTION_STATUS_AND_CONNECT_FLAG)) {
+               on_successfully_receive_general_actions(GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
 
                if (is_usart_response_contains_element(DEFAULT_ACCESS_POINT_NAME)) {
                   // Has already been connected
                   set_flag(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG);
                   GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_SET);
                } else if (is_usart_response_contains_element(ESP8226_RESPONSE_NOT_CONNECTED_STATUS)) {
+                  reset_flag(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG);
                   // Connect
-                  add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
-                  add_piped_task_to_send_into_tail(CONNECT_TO_NETWORK_FLAG);
+                  add_piped_task_to_send_into_head(CONNECT_TO_NETWORK_FLAG);
+                  add_piped_task_to_send_into_head(GET_VISIBLE_NETWORK_LIST_FLAG);
+               }
+            }
+            if (read_flag_state(&successfully_received_flags, GET_CONNECTION_STATUS_FLAG)) {
+               on_successfully_receive_general_actions(GET_CONNECTION_STATUS_FLAG);
+
+               if (is_usart_response_contains_element(DEFAULT_ACCESS_POINT_NAME)) {
+                  // Has already been connected
+                  set_flag(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG);
+                  GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_SET);
+               } else if (is_usart_response_contains_element(ESP8226_RESPONSE_NOT_CONNECTED_STATUS)) {
+                  reset_flag(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG);
                }
             }
             if (read_flag_state(&successfully_received_flags, GET_VISIBLE_NETWORK_LIST_FLAG)) {
@@ -322,25 +347,21 @@ int main() {
             if (read_flag_state(&successfully_received_flags, CLOSE_CONNECTION_FLAG)) {
                on_successfully_receive_general_actions(CLOSE_CONNECTION_FLAG);
             }
-         }
+            if (read_flag_state(&successfully_received_flags, GET_SERVER_AVAILABILITY_FLAG)) {
+               on_successfully_receive_general_actions(GET_SERVER_AVAILABILITY_FLAG);
 
-         unsigned short current_piped_task_to_send = get_current_piped_task_to_send();
-         execute_function_for_current_piped_task(current_piped_task_to_send, send_usart_data_passed_time_sec);
-
-         // LED blinking
-         if (network_searching_status_led_counter >= TIMER3_100MS && !read_flag_state(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG)) {
-            network_searching_status_led_counter = 0;
-
-            if (read_flag_state(&general_flags, NETWORK_SEARCHING_STATUS_LED_FLAG)) {
-               reset_flag(&general_flags, NETWORK_SEARCHING_STATUS_LED_FLAG);
-               GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_SET);
-            } else {
-               set_flag(&general_flags, NETWORK_SEARCHING_STATUS_LED_FLAG);
-               GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_RESET);
+               if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_SERVER_AVAILABILITY)) {
+                  GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_SET);
+               } else {
+                  GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
+               }
             }
          }
 
-         if (response_timeout_timer > TIMER6_10S && !current_piped_task_to_send) {
+         unsigned int current_piped_task_to_send = get_current_piped_task_to_send();
+         execute_function_for_current_piped_task(current_piped_task_to_send, send_usart_data_passed_time_sec);
+
+         /*if (response_timeout_timer > TIMER6_10S && !current_piped_task_to_send) {
             response_timeout_timer = 0;
 
             if (read_flag_state(&general_flags, SENDING_USART_ERRORS_OVERFLOW_FLAG)) {
@@ -355,6 +376,19 @@ int main() {
                char *parameter_for_request[] = {"192.168.0.2", NULL};
                char *request = set_string_parameters(request_template, parameter_for_request);
                send_usart_get_request("192.168.0.2", "80", request, action_on_response);
+            }
+         }*/
+
+         check_connection_status_and_server_availability(current_piped_task_to_send);
+
+         // LED blinking
+         if (network_searching_status_led_counter >= TIMER3_100MS && !read_flag_state(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG)) {
+            network_searching_status_led_counter = 0;
+
+            if (GPIO_ReadOutputDataBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN)) {
+               GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_RESET);
+            } else {
+               GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_SET);
             }
          }
 
@@ -378,11 +412,20 @@ int main() {
    }
 }
 
+void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send) {
+   if (checking_connection_status_and_server_availability_counter >= TIMER6_60S && !current_piped_task_to_send) {
+      checking_connection_status_and_server_availability_counter = 0;
+      add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
+      add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
+   }
+}
+
 void execute_function_for_current_piped_task(unsigned short current_piped_task_to_send, unsigned char send_usart_data_passed_time_sec) {
    if (send_usart_data_function == NULL && current_piped_task_to_send) {
       if (current_piped_task_to_send == DISABLE_ECHO_FLAG) {
          execute_usart_data_sending(disable_echo, 2);
-      } else if (current_piped_task_to_send == OBTAIN_CONNECTION_STATUS_FLAG) {
+      } else if (current_piped_task_to_send == GET_CONNECTION_STATUS_AND_CONNECT_FLAG ||
+            current_piped_task_to_send == GET_CONNECTION_STATUS_FLAG) {
          execute_usart_data_sending(get_connection_status, 2);
       } else if (current_piped_task_to_send == GET_VISIBLE_NETWORK_LIST_FLAG) {
          execute_usart_data_sending(get_network_list, 30);
@@ -405,6 +448,8 @@ void execute_function_for_current_piped_task(unsigned short current_piped_task_t
       } else if (current_piped_task_to_send == CLOSE_CONNECTION_FLAG &&
             (!resending_requests_counter || (resending_requests_counter && send_usart_data_passed_time_sec >= 4))) {
          execute_usart_data_sending(close_connection, 5);
+      } else if (current_piped_task_to_send == GET_SERVER_AVAILABILITY_FLAG) {
+         execute_usart_data_sending(get_server_avalability, 10);
       }
    }
 }
@@ -419,14 +464,23 @@ void set_appropriate_successfully_recieved_flag() {
    if (read_flag_state(&sent_flag, CONNECT_TO_NETWORK_FLAG)) {
       set_appropriate_successfully_recieved_flag_general_action(CONNECT_TO_NETWORK_FLAG, USART_OK);
    }
-   if (read_flag_state(&sent_flag, OBTAIN_CONNECTION_STATUS_FLAG)) {
-      reset_flag(&sent_flag, OBTAIN_CONNECTION_STATUS_FLAG);
-
+   if (read_flag_state(&sent_flag, GET_CONNECTION_STATUS_AND_CONNECT_FLAG) || read_flag_state(&sent_flag, GET_CONNECTION_STATUS_FLAG)) {
       if (is_usart_response_contains_element(DEFAULT_ACCESS_POINT_NAME) ||
             is_usart_response_contains_element(ESP8226_RESPONSE_NOT_CONNECTED_STATUS)) {
-         set_flag(&successfully_received_flags, OBTAIN_CONNECTION_STATUS_FLAG);
+         if (read_flag_state(&sent_flag, GET_CONNECTION_STATUS_AND_CONNECT_FLAG)) {
+            set_flag(&successfully_received_flags, GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
+         } else {
+            set_flag(&successfully_received_flags, GET_CONNECTION_STATUS_FLAG);
+         }
       } else {
+         reset_flag(&general_flags, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG);
          send_usart_data_errors_counter++;
+      }
+
+      if (read_flag_state(&sent_flag, GET_CONNECTION_STATUS_AND_CONNECT_FLAG)) {
+         reset_flag(&sent_flag, GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
+      } else {
+         reset_flag(&sent_flag, GET_CONNECTION_STATUS_FLAG);
       }
    }
    if (read_flag_state(&sent_flag, CONNECT_TO_SERVER_FLAG)) {
@@ -446,7 +500,7 @@ void set_appropriate_successfully_recieved_flag() {
       if (is_usart_response_contains_element(ESP8226_RESPONSE_START_SENDING_READY)) {
          set_flag(&successfully_received_flags, BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
       } else {
-         resend_usart_get_request();
+         resend_usart_get_request(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
          send_usart_data_errors_counter++;
       }
    }
@@ -457,7 +511,7 @@ void set_appropriate_successfully_recieved_flag() {
       if (is_usart_response_contains_elements(data_to_be_contained, 2)) {
          set_flag(&successfully_received_flags, GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
       } else {
-         resend_usart_get_request();
+         resend_usart_get_request(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
          send_usart_data_errors_counter++;
       }
    }
@@ -484,6 +538,10 @@ void set_appropriate_successfully_recieved_flag() {
       reset_flag(&sent_flag, CLOSE_CONNECTION_FLAG);
       set_flag(&successfully_received_flags, CLOSE_CONNECTION_FLAG);
    }
+   if (read_flag_state(&sent_flag, GET_SERVER_AVAILABILITY_FLAG)) {
+      reset_flag(&sent_flag, GET_SERVER_AVAILABILITY_FLAG);
+      set_flag(&successfully_received_flags, GET_SERVER_AVAILABILITY_FLAG);
+   }
 }
 
 void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag_value, char to_be_contained_in_response[]) {
@@ -494,6 +552,14 @@ void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag
    } else {
       send_usart_data_errors_counter++;
    }
+}
+
+void get_server_avalability() {
+   set_flag(&sent_flag, GET_SERVER_AVAILABILITY_FLAG);
+   char *parameter_for_request[] = {ESP8226_SERVER_IP_ADDRESS, NULL};
+   char *request = set_string_parameters(ESP8226_REQUEST_GET_SERVER_AVAILABILITY, parameter_for_request);
+   delete_piped_task(GET_SERVER_AVAILABILITY_FLAG);
+   send_usart_get_request(ESP8226_SERVER_IP_ADDRESS, "80", request, NULL, GET_SERVER_AVAILABILITY_FLAG);
 }
 
 void get_own_ip_address() {
@@ -530,8 +596,10 @@ void action_on_response() {
 /**
  * address, port and request shall be allocated with malloc. Later they will be removed with free
  */
-void send_usart_get_request(char address[], char port[], char request[], void (*execute_on_response)()) {
+void send_usart_get_request(char address[], char port[], char request[], void (*execute_on_response)(), unsigned int final_task) {
    clear_piped_request_commands_to_send();
+   send_usart_data_function = NULL;
+
    char *parameters[] = {address, port, NULL};
    piped_request_commands_to_send[PIPED_REQUEST_CIPSTART_COMMAND_INDEX] = set_string_parameters(ESP8226_REQUEST_CONNECT_TO_SERVER, parameters);
 
@@ -546,20 +614,20 @@ void send_usart_get_request(char address[], char port[], char request[], void (*
 
    add_piped_task_to_send_into_tail(CONNECT_TO_SERVER_FLAG);
    add_piped_task_to_send_into_tail(BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
-   add_piped_task_to_send_into_tail(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
+   add_piped_task_to_send_into_tail(final_task);
 }
 
-void resend_usart_get_request() {
+void resend_usart_get_request(unsigned int final_task) {
    send_usart_data_timer_counter = 0;
    resending_requests_counter++;
    send_usart_data_function = NULL;
    delete_piped_task(BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
-   delete_piped_task(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
+   delete_piped_task(final_task);
 
    add_piped_task_to_send_into_tail(CLOSE_CONNECTION_FLAG);
    add_piped_task_to_send_into_tail(CONNECT_TO_SERVER_FLAG);
    add_piped_task_to_send_into_tail(BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
-   add_piped_task_to_send_into_tail(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
+   add_piped_task_to_send_into_tail(final_task);
 }
 
 void clear_piped_request_commands_to_send() {
@@ -608,7 +676,7 @@ void on_successfully_receive_general_actions(unsigned short successfully_receive
    remove_current_piped_task_to_send();
 }
 
-unsigned short get_current_piped_task_to_send() {
+unsigned int get_current_piped_task_to_send() {
    return piped_tasks_to_send[0];
 }
 
@@ -716,7 +784,7 @@ void get_network_list() {
 
 void get_connection_status() {
    send_usard_data(ESP8226_REQUEST_GET_CONNECTION_STATUS);
-   set_flag(&sent_flag, OBTAIN_CONNECTION_STATUS_FLAG);
+   set_flag(&sent_flag, GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
 }
 
 void connect_to_network() {
@@ -1044,6 +1112,7 @@ void enable_esp8266() {
 
 void disable_esp8266() {
    GPIO_WriteBit(GPIOA, GPIO_Pin_12, Bit_SET);
+   GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_RESET);
 }
 
 unsigned char is_esp8266_enabled(unsigned char include_timer) {
