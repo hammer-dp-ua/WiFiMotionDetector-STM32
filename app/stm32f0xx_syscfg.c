@@ -244,7 +244,7 @@
   *         For STM32F031: (0..15) for GPIOA, GPIOB, (13..15) for GPIOC and (0..1, 6..7) for GPIOF.
   * @retval None
   */
-/*void SYSCFG_EXTILineConfig(uint8_t EXTI_PortSourceGPIOx, uint8_t EXTI_PinSourcex)
+void SYSCFG_EXTILineConfig(uint8_t EXTI_PortSourceGPIOx, uint8_t EXTI_PinSourcex)
 {
   uint32_t tmp = 0x00;
 
@@ -255,7 +255,7 @@
   tmp = ((uint32_t)0x0F) << (0x04 * (EXTI_PinSourcex & (uint8_t)0x03));
   SYSCFG->EXTICR[EXTI_PinSourcex >> 0x02] &= ~tmp;
   SYSCFG->EXTICR[EXTI_PinSourcex >> 0x02] |= (((uint32_t)EXTI_PortSourceGPIOx) << (0x04 * (EXTI_PinSourcex & (uint8_t)0x03)));
-}*/
+}
 
 /**
   * @brief  check ISR wrapper: Allow to determine interrupt source per line .

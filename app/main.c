@@ -16,6 +16,9 @@
 #define NETWORK_STATUS_LED_PORT GPIOA
 #define SERVER_AVAILABILITI_LED_PIN GPIO_Pin_2
 #define SERVER_AVAILABILITI_LED_PORT GPIOA
+#define MOTION_SENSOR_INPUT_PIN GPIO_Pin_3
+#define MOTION_SENSOR_EXTI_PIN_SOURCE EXTI_PinSource3
+#define MOTION_SENSOR_INPUT_PORT GPIOA
 
 #define USART_DATA_RECEIVED_FLAG 1
 #define SERVER_IS_AVAILABLE_FLAG 2
@@ -39,6 +42,8 @@
 #define GET_CONNECTION_STATUS_FLAG 16384
 #define SERVER_AVAILABILITY_RESPONSE_FLAG 32768
 #define GET_SERVER_AVAILABILITY_FLAG 65536
+#define ALARM_RESPONSE_FLAG 131072
+#define SEND_ALARM_FLAG 262144
 
 #define USART_DATA_RECEIVED_BUFFER_SIZE 500
 #define PIPED_REQUEST_COMMANDS_TO_SEND_SIZE 3
@@ -102,7 +107,8 @@ char ESP8226_REQUEST_GET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const")
 char ESP8226_RESPONSE_CURRENT_OWN_IP_ADDRESS_PREFIX[] __attribute__ ((section(".text.const"))) = "+CIPSTA_DEF:ip:";
 char ESP8226_REQUEST_SET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF=\"{1}\"\r\n";
 char ESP8226_REQUEST_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) = "GET /server/esp8266/test HTTP/1.1\r\nHost: {1}\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
-char ESP8226_RESPONSE_OK_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
+char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
+char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) = "GET /server/esp8266/alarm HTTP/1.1\r\nHost: {1}\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
 
 char *usart_data_to_be_transmitted_buffer_g = NULL;
 char usart_data_received_buffer_g[USART_DATA_RECEIVED_BUFFER_SIZE];
@@ -211,6 +217,11 @@ void TIM3_IRQHandler() {
       send_usart_data_timer_counter_g++;
    }
    network_searching_status_led_counter_g++;
+}
+
+void EXTI2_3_IRQHandler() {
+   EXTI_ClearITPendingBit(EXTI_Line3);
+   GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN);
 }
 
 void USART1_IRQHandler() {
@@ -361,7 +372,7 @@ int main() {
             if (read_flag_state(&successfully_received_flags_g, SERVER_AVAILABILITY_RESPONSE_FLAG)) {
                on_successfully_receive_general_actions(SERVER_AVAILABILITY_RESPONSE_FLAG);
 
-               if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_SERVER_AVAILABILITY)) {
+               if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_SET);
                } else {
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
@@ -877,13 +888,17 @@ void Pins_Config() {
    gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
    GPIO_Init(GPIOA, &gpioInitType);
 
+   // Motion sensor input
+   //gpioInitType.GPIO_PuPd = GPIO_PuPd_NOPULL;
+   //gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN;
+   //GPIO_Init(MOTION_SENSOR_INPUT_PORT, gpioInitType);
+
+   // For USART1
    gpioInitType.GPIO_Pin = (1<<GPIO_PinSource9) | (1<<GPIO_PinSource10);
    gpioInitType.GPIO_PuPd = GPIO_PuPd_NOPULL;
    gpioInitType.GPIO_Mode = GPIO_Mode_AF;
    gpioInitType.GPIO_OType = GPIO_OType_PP;
    GPIO_Init(GPIOA, &gpioInitType);
-
-   // For USART1
    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1);
    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1);
 
@@ -997,6 +1012,25 @@ void USART_Config() {
    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
 
    USART_Cmd(USART1, ENABLE);
+}
+
+void EXTERNAL_Interrupt_Config() {
+   SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOA, MOTION_SENSOR_EXTI_PIN_SOURCE);
+
+   EXTI_InitTypeDef EXTI_InitStructure;
+   EXTI_InitStructure.EXTI_Line = EXTI_Line3;
+   EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
+   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // EXTI_Trigger_Rising
+   EXTI_InitStructure.EXTI_LineCmd = ENABLE;
+   EXTI_Init(&EXTI_InitStructure);
+
+   NVIC_InitTypeDef NVIC_InitTypeInitStructure;
+   NVIC_InitTypeInitStructure.NVIC_IRQChannel = EXTI2_3_IRQn;
+   NVIC_InitTypeInitStructure.NVIC_IRQChannelPriority = 3;
+   NVIC_InitTypeInitStructure.NVIC_IRQChannelCmd = ENABLE;
+   NVIC_Init(&NVIC_InitTypeInitStructure);
+
+   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 }
 
 void set_flag(unsigned int *flags, unsigned int flag_value) {

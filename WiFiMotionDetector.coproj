@@ -86,10 +86,10 @@
     <File name="components/cmsis_core/core_cmFunc.h" path="components/coocox-master/cmsis_core/source/core_cmFunc.h" type="1"/>
     <File name="components/cmsis_core" path="" type="2"/>
     <File name="components/stm32f0xx_spi.h" path="components/stm32f0xx_spi.h" type="1"/>
-    <File name="components/cmsis_core/arm_const_structs.h" path="components/coocox-master/cmsis_core/source/arm_const_structs.h" type="1"/>
     <File name="components/cmsis_core/arm_common_tables.h" path="components/coocox-master/cmsis_core/source/arm_common_tables.h" type="1"/>
-    <File name="components/stm32f0xx_dbgmcu.h" path="components/stm32f0xx_dbgmcu.h" type="1"/>
+    <File name="components/cmsis_core/arm_const_structs.h" path="components/coocox-master/cmsis_core/source/arm_const_structs.h" type="1"/>
     <File name="components/arm_math.h" path="components/arm_math.h" type="1"/>
+    <File name="components/stm32f0xx_dbgmcu.h" path="components/stm32f0xx_dbgmcu.h" type="1"/>
     <File name="components/cmsis_core/core_sc300.h" path="components/coocox-master/cmsis_core/source/core_sc300.h" type="1"/>
     <File name="stm32f0xx_rtc.c" path="app/stm32f0xx_rtc.c" type="1"/>
     <File name="stm32f0xx_rcc.c" path="app/stm32f0xx_rcc.c" type="1"/>
@@ -112,25 +112,27 @@
     <File name="components/stm32f0xx_adc.h" path="components/stm32f0xx_adc.h" type="1"/>
     <File name="components/C_library/syscalls.c" path="components/coocox-master/C_library/source/syscalls.c" type="1"/>
     <File name="stm32f0xx_exti.c" path="app/stm32f0xx_exti.c" type="1"/>
-    <File name="stm32f0xx_tim.c" path="app/stm32f0xx_tim.c" type="1"/>
     <File name="stm32f0xx_gpio.c" path="app/stm32f0xx_gpio.c" type="1"/>
+    <File name="stm32f0xx_tim.c" path="app/stm32f0xx_tim.c" type="1"/>
     <File name="components/stm32f0xx_iwdg.h" path="components/stm32f0xx_iwdg.h" type="1"/>
     <File name="stm32f0xx_usart.c" path="app/stm32f0xx_usart.c" type="1"/>
     <File name="components/cmsis_core/core_cm3.h" path="components/coocox-master/cmsis_core/source/core_cm3.h" type="1"/>
     <File name="components/stm32f0xx_rtc.h" path="components/stm32f0xx_rtc.h" type="1"/>
     <File name="stm32f0xx_dbgmcu.c" path="app/stm32f0xx_dbgmcu.c" type="1"/>
     <File name="stm32f0xx_pwr.c" path="app/stm32f0xx_pwr.c" type="1"/>
+    <File name="components/stm32f0xx_misc.h" path="components/stm32f0xx_misc.h" type="1"/>
     <File name="components/core_cm0.h" path="components/core_cm0.h" type="1"/>
     <File name="stm32f0xx_conf.h" path="app/stm32f0xx_conf.h" type="1"/>
-    <File name="stm32f0xx_spi.c" path="app/stm32f0xx_spi.c" type="1"/>
     <File name="components/stm32f0xx_rcc.h" path="components/stm32f0xx_rcc.h" type="1"/>
+    <File name="stm32f0xx_spi.c" path="app/stm32f0xx_spi.c" type="1"/>
     <File name="components/cmsis_core/core_cm4.h" path="components/coocox-master/cmsis_core/source/core_cm4.h" type="1"/>
     <File name="system_stm32f0xx.c" path="app/system_stm32f0xx.c" type="1"/>
     <File name="stm32f0xx_iwdg.c" path="app/stm32f0xx_iwdg.c" type="1"/>
     <File name="components" path="" type="2"/>
+    <File name="stm32f0xx_misc.c" path="app/stm32f0xx_misc.c" type="1"/>
     <File name="components/stm32f0xx_gpio.h" path="components/stm32f0xx_gpio.h" type="1"/>
-    <File name="components/stm32f0xx_pwr.h" path="components/stm32f0xx_pwr.h" type="1"/>
     <File name="main.c" path="app/main.c" type="1"/>
+    <File name="components/stm32f0xx_pwr.h" path="components/stm32f0xx_pwr.h" type="1"/>
     <File name="components/cmsis_core/arm_math.h" path="components/coocox-master/cmsis_core/source/arm_math.h" type="1"/>
   </Files>
   <Bookmarks/>
