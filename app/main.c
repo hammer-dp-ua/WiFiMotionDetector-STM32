@@ -53,6 +53,7 @@
 
 #define PIPED_TASKS_TO_SEND_SIZE 10
 #define PIPED_TASKS_HISTORY_SIZE 10
+#define DEFAULT_ACCESS_POINT_GAIN_SIZE 4
 
 #define TIMER3_PERIOD_MS 0.13f
 #define TIMER3_PERIOD_SEC (TIMER3_PERIOD_MS / 1000)
@@ -81,6 +82,7 @@ char DEFAULT_ACCESS_POINT_PASSWORD[] __attribute__ ((section(".text.const"))) = 
 char ESP8226_REQUEST_DISABLE_ECHO[] __attribute__ ((section(".text.const"))) = "ATE0\r\n";
 char ESP8226_RESPONSE_BUSY[] __attribute__ ((section(".text.const"))) = "busy";
 char ESP8226_REQUEST_GET_VISIBLE_NETWORK_LIST[] __attribute__ ((section(".text.const"))) = "AT+CWLAP\r\n";
+char ESP8226_RESPONSE_VISIBLE_NETWORK_LIST_PREFIX[] __attribute__ ((section(".text.const"))) = "+CWLAP:";
 char ESP8226_REQUEST_GET_CONNECTION_STATUS[] __attribute__ ((section(".text.const"))) = "AT+CWJAP?\r\n";
 char ESP8226_RESPONSE_NOT_CONNECTED_STATUS[] __attribute__ ((section(".text.const"))) = "No AP";
 char ESP8226_REQUEST_CONNECT_TO_NETWORK_AND_SAVE[] __attribute__ ((section(".text.const"))) = "AT+CWJAP_DEF=\"{1}\",\"{2}\"\r\n";
@@ -112,6 +114,7 @@ char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) = "GE
 
 char *usart_data_to_be_transmitted_buffer_g = NULL;
 char usart_data_received_buffer_g[USART_DATA_RECEIVED_BUFFER_SIZE];
+char default_access_point_gain_g[DEFAULT_ACCESS_POINT_GAIN_SIZE];
 volatile unsigned short usart_received_bytes_g;
 volatile unsigned int final_task_for_request_resending_g;
 
@@ -136,6 +139,7 @@ void Clock_Config();
 void Pins_Config();
 void TIMER3_Confing();
 void TIMER6_Confing();
+void EXTERNAL_Interrupt_Config();
 void set_flag(unsigned int *flags, unsigned int flag_value);
 void reset_flag(unsigned int *flags, unsigned int flag_value);
 unsigned char read_flag_state(unsigned int *flags, unsigned int flag_value);
@@ -184,6 +188,7 @@ void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag
 void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send);
 void add_piped_task_into_history(unsigned int task);
 unsigned int get_last_piped_task_in_history();
+void get_default_access_point_gain();
 
 void DMA1_Channel2_3_IRQHandler() {
    DMA_ClearITPendingBit(DMA1_IT_TC2);
@@ -220,8 +225,10 @@ void TIM3_IRQHandler() {
 }
 
 void EXTI2_3_IRQHandler() {
-   EXTI_ClearITPendingBit(EXTI_Line3);
-   GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN);
+   if (EXTI_GetITStatus(EXTI_Line3)) {
+      EXTI_ClearITPendingBit(EXTI_Line3);
+      GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN);
+   }
 }
 
 void USART1_IRQHandler() {
@@ -260,10 +267,12 @@ int main() {
    USART_Config();
    TIMER3_Confing();
    TIMER6_Confing();
+   EXTERNAL_Interrupt_Config();
 
    add_piped_task_to_send_into_tail(DISABLE_ECHO_FLAG);
    add_piped_task_to_send_into_tail(GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
    add_piped_task_to_send_into_tail(GET_OWN_IP_ADDRESS_FLAG);
+   add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
    add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
    add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
 
@@ -307,7 +316,6 @@ int main() {
                   reset_flag(&general_flags_g, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG);
                   // Connect
                   add_piped_task_to_send_into_head(CONNECT_TO_NETWORK_FLAG);
-                  add_piped_task_to_send_into_head(GET_VISIBLE_NETWORK_LIST_FLAG);
                }
             }
             if (read_flag_state(&successfully_received_flags_g, GET_CONNECTION_STATUS_FLAG)) {
@@ -323,6 +331,10 @@ int main() {
             }
             if (read_flag_state(&successfully_received_flags_g, GET_VISIBLE_NETWORK_LIST_FLAG)) {
                on_successfully_receive_general_actions(GET_VISIBLE_NETWORK_LIST_FLAG);
+
+               if (is_usart_response_contains_element(DEFAULT_ACCESS_POINT_NAME)) {
+                  get_default_access_point_gain();
+               }
             }
             if (read_flag_state(&successfully_received_flags_g, CONNECT_TO_NETWORK_FLAG)) {
                on_successfully_receive_general_actions(CONNECT_TO_NETWORK_FLAG);
@@ -488,7 +500,7 @@ void set_appropriate_successfully_recieved_flag() {
       set_appropriate_successfully_recieved_flag_general_action(DISABLE_ECHO_FLAG, USART_OK);
    }
    if (read_flag_state(&sent_flag_g, GET_VISIBLE_NETWORK_LIST_FLAG)) {
-      set_appropriate_successfully_recieved_flag_general_action(GET_VISIBLE_NETWORK_LIST_FLAG, DEFAULT_ACCESS_POINT_NAME);
+      set_appropriate_successfully_recieved_flag_general_action(GET_VISIBLE_NETWORK_LIST_FLAG, ESP8226_RESPONSE_VISIBLE_NETWORK_LIST_PREFIX);
    }
    if (read_flag_state(&sent_flag_g, CONNECT_TO_NETWORK_FLAG)) {
       set_appropriate_successfully_recieved_flag_general_action(CONNECT_TO_NETWORK_FLAG, USART_OK);
@@ -707,6 +719,10 @@ void on_successfully_receive_general_actions(unsigned short successfully_receive
    send_usart_data_errors_counter_g = 0;
    add_piped_task_into_history(get_current_piped_task_to_send());
    delete_current_piped_task();
+}
+
+void get_default_access_point_gain() {
+   ~
 }
 
 unsigned int get_current_piped_task_to_send() {

@@ -263,7 +263,7 @@ void EXTI_Init(EXTI_InitTypeDef* EXTI_InitStruct)
   *          This parameter can be EXTI_Linex where x can be (0..27).
   * @retval The new state of EXTI_Line (SET or RESET).
   */
-/*ITStatus EXTI_GetITStatus(uint32_t EXTI_Line)
+ITStatus EXTI_GetITStatus(uint32_t EXTI_Line)
 {
   ITStatus bitstatus = RESET;
 
@@ -279,7 +279,7 @@ void EXTI_Init(EXTI_InitTypeDef* EXTI_InitStruct)
     bitstatus = RESET;
   }
   return bitstatus;
-}*/
+}
 
 /**
   * @brief  Clears the EXTI's line pending bits.
