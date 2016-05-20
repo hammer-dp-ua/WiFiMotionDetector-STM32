@@ -16,9 +16,12 @@
 #define NETWORK_STATUS_LED_PORT GPIOA
 #define SERVER_AVAILABILITI_LED_PIN GPIO_Pin_2
 #define SERVER_AVAILABILITI_LED_PORT GPIOA
+#define MOTION_SENSOR_LED_PIN GPIO_Pin_4
+#define MOTION_SENSOR_LED_PORT GPIOA
 #define MOTION_SENSOR_INPUT_PIN GPIO_Pin_3
 #define MOTION_SENSOR_EXTI_PIN_SOURCE EXTI_PinSource3
 #define MOTION_SENSOR_INPUT_PORT GPIOA
+#define ESP8266_CONTROL_PIN GPIO_Pin_12
 
 #define USART_DATA_RECEIVED_FLAG 1
 #define SERVER_IS_AVAILABLE_FLAG 2
@@ -164,7 +167,7 @@ void add_piped_task_to_send_into_tail(unsigned int task);
 void add_piped_task_to_send_into_head(unsigned int task);
 void delete_piped_task(unsigned int task);
 void on_successfully_receive_general_actions(unsigned short successfully_received_flag);
-void send_usart_get_request(char address[], char port[], char request[], void (*on_response)(), unsigned int final_task);
+void send_http_request(char address[], char port[], char request[], void (*on_response)(), unsigned int final_task);
 void resend_usart_get_request(unsigned int final_task);
 void resend_usart_get_request_using_global_final_task();
 void *short_to_string(unsigned short number);
@@ -188,7 +191,7 @@ void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag
 void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send);
 void add_piped_task_into_history(unsigned int task);
 unsigned int get_last_piped_task_in_history();
-void get_default_access_point_gain();
+void save_default_access_point_gain();
 
 void DMA1_Channel2_3_IRQHandler() {
    DMA_ClearITPendingBit(DMA1_IT_TC2);
@@ -333,7 +336,7 @@ int main() {
                on_successfully_receive_general_actions(GET_VISIBLE_NETWORK_LIST_FLAG);
 
                if (is_usart_response_contains_element(DEFAULT_ACCESS_POINT_NAME)) {
-                  get_default_access_point_gain();
+                  save_default_access_point_gain();
                }
             }
             if (read_flag_state(&successfully_received_flags_g, CONNECT_TO_NETWORK_FLAG)) {
@@ -597,7 +600,7 @@ void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag
 void get_server_avalability() {
    char *parameter_for_request[] = {ESP8226_SERVER_IP_ADDRESS, NULL};
    char *request = set_string_parameters(ESP8226_REQUEST_GET_SERVER_AVAILABILITY, parameter_for_request);
-   send_usart_get_request(ESP8226_SERVER_IP_ADDRESS, ESP8226_SERVER_PORT, request, NULL, SERVER_AVAILABILITY_RESPONSE_FLAG);
+   send_http_request(ESP8226_SERVER_IP_ADDRESS, ESP8226_SERVER_PORT, request, NULL, SERVER_AVAILABILITY_RESPONSE_FLAG);
 }
 
 void get_own_ip_address() {
@@ -634,7 +637,7 @@ void action_on_response() {
 /**
  * address, port and request shall be allocated with malloc. Later they will be removed with free
  */
-void send_usart_get_request(char address[], char port[], char request[], void (*execute_on_response)(), unsigned int final_task) {
+void send_http_request(char address[], char port[], char request[], void (*execute_on_response)(), unsigned int final_task) {
    clear_piped_request_commands_to_send();
    send_usart_data_function_g = NULL;
 
@@ -721,8 +724,40 @@ void on_successfully_receive_general_actions(unsigned short successfully_receive
    delete_current_piped_task();
 }
 
-void get_default_access_point_gain() {
-   ~
+// +CWLAP:("Asus",-74,...)
+void save_default_access_point_gain() {
+   unsigned char first_comma_is_found = 0;
+   char *access_point_starting_position = strstr(usart_data_received_buffer_g, DEFAULT_ACCESS_POINT_NAME);
+
+   if (access_point_starting_position == NULL) {
+      for (unsigned char i = 0; i < DEFAULT_ACCESS_POINT_GAIN_SIZE; i++) {
+         default_access_point_gain_g[i] = '\0';
+      }
+   }
+
+   while (*access_point_starting_position != '\0') {
+      if (first_comma_is_found && *access_point_starting_position == ',') {
+         access_point_starting_position--;
+         break;
+      }
+
+      if (*access_point_starting_position == ',') {
+         first_comma_is_found = 1;
+      }
+      access_point_starting_position++;
+   }
+
+   for (unsigned char i = 0; i < DEFAULT_ACCESS_POINT_GAIN_SIZE; i++) {
+      if (*access_point_starting_position == ',') {
+         for (unsigned char i2 = i; i2 < DEFAULT_ACCESS_POINT_GAIN_SIZE; i2++) {
+            default_access_point_gain_g[i2] = '\0';
+         }
+         break;
+      }
+
+      default_access_point_gain_g[i] = *access_point_starting_position;
+      access_point_starting_position--;
+   }
 }
 
 unsigned int get_current_piped_task_to_send() {
@@ -898,16 +933,16 @@ void Pins_Config() {
    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB, ENABLE);
 
    GPIO_InitTypeDef gpioInitType;
-   gpioInitType.GPIO_Pin = 0x89F9; // Pins PA0, 3 - 8, 11, 15. PA13, PA14 - Debugger pins
+   gpioInitType.GPIO_Pin = 0x89E1; // PA13, PA14 - Debugger pins
    gpioInitType.GPIO_Mode = GPIO_Mode_IN;
    gpioInitType.GPIO_Speed = GPIO_Speed_Level_2; // 10 MHz
    gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
    GPIO_Init(GPIOA, &gpioInitType);
 
    // Motion sensor input
-   //gpioInitType.GPIO_PuPd = GPIO_PuPd_NOPULL;
-   //gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN;
-   //GPIO_Init(MOTION_SENSOR_INPUT_PORT, gpioInitType);
+   gpioInitType.GPIO_PuPd = GPIO_PuPd_NOPULL;
+   gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN;
+   GPIO_Init(MOTION_SENSOR_INPUT_PORT, &gpioInitType);
 
    // For USART1
    gpioInitType.GPIO_Pin = (1<<GPIO_PinSource9) | (1<<GPIO_PinSource10);
@@ -935,8 +970,12 @@ void Pins_Config() {
    gpioInitType.GPIO_Pin = SERVER_AVAILABILITI_LED_PIN;
    GPIO_Init(SERVER_AVAILABILITI_LED_PORT, &gpioInitType);
 
-   // PA12 ESP8266 enable/disable
-   gpioInitType.GPIO_Pin = GPIO_Pin_12;
+   // MOTION SENSOR LED
+   gpioInitType.GPIO_Pin = MOTION_SENSOR_LED_PIN;
+   GPIO_Init(MOTION_SENSOR_LED_PORT, &gpioInitType);
+
+   // ESP8266 enable/disable
+   gpioInitType.GPIO_Pin = ESP8266_CONTROL_PIN;
    gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
    GPIO_Init(GPIOA, &gpioInitType);
 }
@@ -1210,16 +1249,16 @@ void clear_usart_data_received_buffer() {
 }
 
 void enable_esp8266() {
-   GPIO_WriteBit(GPIOA, GPIO_Pin_12, Bit_RESET);
+   GPIO_WriteBit(GPIOA, ESP8266_CONTROL_PIN, Bit_RESET);
    esp8266_disabled_timer_g = TIMER6_5S;
 }
 
 void disable_esp8266() {
-   GPIO_WriteBit(GPIOA, GPIO_Pin_12, Bit_SET);
+   GPIO_WriteBit(GPIOA, ESP8266_CONTROL_PIN, Bit_SET);
    GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_RESET);
 }
 
 unsigned char is_esp8266_enabled(unsigned char include_timer) {
-   return include_timer ? (!GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_12) && esp8266_disabled_timer_g == 0) :
-         !GPIO_ReadOutputDataBit(GPIOA, GPIO_Pin_12);
+   return include_timer ? (!GPIO_ReadOutputDataBit(GPIOA, ESP8266_CONTROL_PIN) && esp8266_disabled_timer_g == 0) :
+         !GPIO_ReadOutputDataBit(GPIOA, ESP8266_CONTROL_PIN);
 }
