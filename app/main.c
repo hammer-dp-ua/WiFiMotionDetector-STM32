@@ -67,6 +67,7 @@
 #define TIMER6_10S 100
 #define TIMER6_30S 300
 #define TIMER6_60S 600
+#define TIMER6_10MIN 6000
 
 #define EXECUTE_FUNCTION 1
 #define DO_NOT_EXECUTE_FUNCTION 0
@@ -88,14 +89,14 @@ char ESP8226_REQUEST_GET_VISIBLE_NETWORK_LIST[] __attribute__ ((section(".text.c
 char ESP8226_RESPONSE_VISIBLE_NETWORK_LIST_PREFIX[] __attribute__ ((section(".text.const"))) = "+CWLAP:";
 char ESP8226_REQUEST_GET_CONNECTION_STATUS[] __attribute__ ((section(".text.const"))) = "AT+CWJAP?\r\n";
 char ESP8226_RESPONSE_NOT_CONNECTED_STATUS[] __attribute__ ((section(".text.const"))) = "No AP";
-char ESP8226_REQUEST_CONNECT_TO_NETWORK_AND_SAVE[] __attribute__ ((section(".text.const"))) = "AT+CWJAP_DEF=\"{1}\",\"{2}\"\r\n";
+char ESP8226_REQUEST_CONNECT_TO_NETWORK_AND_SAVE[] __attribute__ ((section(".text.const"))) = "AT+CWJAP_DEF=\"<1>\",\"<2>\"\r\n";
 char ESP8226_REQUEST_GET_VERSION_ID[] __attribute__ ((section(".text.const"))) = "AT+GMR\r\n";
 char ESP8226_RESPONSE_CONNECTED[] __attribute__ ((section(".text.const"))) = "CONNECT";
 char ESP8226_CONNECTION_CLOSED[] __attribute__ ((section(".text.const"))) = "CLOSED";
-char ESP8226_REQUEST_CONNECT_TO_SERVER[] __attribute__ ((section(".text.const"))) = "AT+CIPSTART=\"TCP\",\"{1}\",{2}\r\n";
+char ESP8226_REQUEST_CONNECT_TO_SERVER[] __attribute__ ((section(".text.const"))) = "AT+CIPSTART=\"TCP\",\"<1>\",<2>\r\n";
 char ESP8226_REQUEST_DISCONNECT_FROM_SERVER[] __attribute__ ((section(".text.const"))) = "AT+CIPCLOSE\r\n";
-char ESP8226_REQUEST_SERVER_PING[] __attribute__ ((section(".text.const"))) = "AT+PING=\"{1}\"\r\n";
-char ESP8226_REQUEST_START_SENDING[] __attribute__ ((section(".text.const"))) = "AT+CIPSEND={1}\r\n";
+char ESP8226_REQUEST_SERVER_PING[] __attribute__ ((section(".text.const"))) = "AT+PING=\"<1>\"\r\n";
+char ESP8226_REQUEST_START_SENDING[] __attribute__ ((section(".text.const"))) = "AT+CIPSEND=<1>\r\n";
 char ESP8226_RESPONSE_START_SENDING_READY[] __attribute__ ((section(".text.const"))) = ">";
 char ESP8226_RESPONSE_SENDING[] __attribute__ ((section(".text.const"))) = "busy s...";
 char ESP8226_RESPONSE_SUCCSESSFULLY_SENT[] __attribute__ ((section(".text.const"))) = "SEND OK";
@@ -110,14 +111,19 @@ char ESP8226_RESPONSE_WIFI_STATION_MODE[] __attribute__ ((section(".text.const")
 char ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE[] __attribute__ ((section(".text.const"))) = "AT+CWMODE_DEF=1\r\n";
 char ESP8226_REQUEST_GET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF?\r\n";
 char ESP8226_RESPONSE_CURRENT_OWN_IP_ADDRESS_PREFIX[] __attribute__ ((section(".text.const"))) = "+CIPSTA_DEF:ip:";
-char ESP8226_REQUEST_SET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF=\"{1}\"\r\n";
-char ESP8226_REQUEST_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) = "GET /server/esp8266/test HTTP/1.1\r\nHost: {1}\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
+char ESP8226_REQUEST_SET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF=\"<1>\"\r\n";
+char ESP8226_REQUEST_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) =
+      "GET /server/esp8266/test HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
+char ESP8226_REQUEST_SEND_STATUS_INFO_AND_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) =
+      "POST /server/esp8266/statusInfo HTTP/1.1\r\nContent-Length: <1>\r\nHost: <2>\r\nUser-Agent: ESP8266\r\nContent-Type: application/json\r\nAccept: application/json\r\nConnection: close\r\n\r\n<3>\r\n";
+char GAIN_JSON[] __attribute__ ((section(".text.const"))) = "{\"gain\":\"<1>\"}";
 char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
-char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) = "GET /server/esp8266/alarm HTTP/1.1\r\nHost: {1}\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
+char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) =
+      "GET /server/esp8266/alarm HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
 
 char *usart_data_to_be_transmitted_buffer_g = NULL;
 char usart_data_received_buffer_g[USART_DATA_RECEIVED_BUFFER_SIZE];
-char default_access_point_gain_g[DEFAULT_ACCESS_POINT_GAIN_SIZE];
+char default_access_point_gain_g[DEFAULT_ACCESS_POINT_GAIN_SIZE] = {' ', ' ', ' ', ' '};
 volatile unsigned short usart_received_bytes_g;
 volatile unsigned int final_task_for_request_resending_g;
 
@@ -132,6 +138,7 @@ volatile unsigned char esp8266_disabled_counter_g;
 volatile unsigned char esp8266_disabled_timer_g = TIMER6_5S;
 volatile unsigned char resending_requests_counter_g;
 volatile unsigned short checking_connection_status_and_server_availability_counter_g;
+volatile unsigned short visible_network_list_counter_g;
 
 volatile unsigned short usart_overrun_errors_counter_g;
 volatile unsigned short usart_idle_line_detection_counter_g;
@@ -171,6 +178,7 @@ void send_http_request(char address[], char port[], char request[], void (*on_re
 void resend_usart_get_request(unsigned int final_task);
 void resend_usart_get_request_using_global_final_task();
 void *short_to_string(unsigned short number);
+void *array_to_string(char array[], unsigned char array_length);
 void connect_to_server();
 void set_bytes_amount_to_send();
 void send_request(unsigned int sent_flag_to_set);
@@ -204,6 +212,7 @@ void TIM6_DAC_IRQHandler() {
    TIM_ClearITPendingBit(TIM6, TIM_IT_Update);
 
    response_timeout_timer_g++;
+   visible_network_list_counter_g++;
    checking_connection_status_and_server_availability_counter_g++;
    if (!is_esp8266_enabled(0)) {
       esp8266_disabled_counter_g++;
@@ -335,9 +344,7 @@ int main() {
             if (read_flag_state(&successfully_received_flags_g, GET_VISIBLE_NETWORK_LIST_FLAG)) {
                on_successfully_receive_general_actions(GET_VISIBLE_NETWORK_LIST_FLAG);
 
-               if (is_usart_response_contains_element(DEFAULT_ACCESS_POINT_NAME)) {
-                  save_default_access_point_gain();
-               }
+               save_default_access_point_gain();
             }
             if (read_flag_state(&successfully_received_flags_g, CONNECT_TO_NETWORK_FLAG)) {
                on_successfully_receive_general_actions(CONNECT_TO_NETWORK_FLAG);
@@ -417,6 +424,11 @@ int main() {
          }*/
 
          check_connection_status_and_server_availability(current_piped_task_to_send);
+
+         if (visible_network_list_counter_g >= TIMER6_10MIN) {
+            visible_network_list_counter_g = 0;
+            add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
+         }
 
          // LED blinking
          if (network_searching_status_led_counter_g >= TIMER3_100MS && !read_flag_state(&general_flags_g, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG)) {
@@ -598,8 +610,18 @@ void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag
 }
 
 void get_server_avalability() {
-   char *parameter_for_request[] = {ESP8226_SERVER_IP_ADDRESS, NULL};
-   char *request = set_string_parameters(ESP8226_REQUEST_GET_SERVER_AVAILABILITY, parameter_for_request);
+   char *gain = array_to_string(default_access_point_gain_g, DEFAULT_ACCESS_POINT_GAIN_SIZE);
+   char *parameter_for_gain[] = {gain, NULL};
+   char *gain_json = set_string_parameters(GAIN_JSON, parameter_for_gain);
+   unsigned char gain_string_length = (unsigned char) get_string_length(gain_json);
+   char *gain_string_length_string = short_to_string(gain_string_length);
+   char *parameters_for_request[] = {gain_string_length_string, ESP8226_SERVER_IP_ADDRESS, gain_json, NULL};
+   char *request = set_string_parameters(ESP8226_REQUEST_SEND_STATUS_INFO_AND_GET_SERVER_AVAILABILITY, parameters_for_request);
+
+   free(gain);
+   free(gain_json);
+   free(gain_string_length_string);
+
    send_http_request(ESP8226_SERVER_IP_ADDRESS, ESP8226_SERVER_PORT, request, NULL, SERVER_AVAILABILITY_RESPONSE_FLAG);
 }
 
@@ -635,7 +657,7 @@ void action_on_response() {
 }
 
 /**
- * address, port and request shall be allocated with malloc. Later they will be removed with free
+ * address, port and request shall be allocated with malloc. Later they will be removed with free function
  */
 void send_http_request(char address[], char port[], char request[], void (*execute_on_response)(), unsigned int final_task) {
    clear_piped_request_commands_to_send();
@@ -726,12 +748,16 @@ void on_successfully_receive_general_actions(unsigned short successfully_receive
 
 // +CWLAP:("Asus",-74,...)
 void save_default_access_point_gain() {
+   if (!is_usart_response_contains_element(DEFAULT_ACCESS_POINT_NAME)) {
+      return;
+   }
+
    unsigned char first_comma_is_found = 0;
    char *access_point_starting_position = strstr(usart_data_received_buffer_g, DEFAULT_ACCESS_POINT_NAME);
 
    if (access_point_starting_position == NULL) {
       for (unsigned char i = 0; i < DEFAULT_ACCESS_POINT_GAIN_SIZE; i++) {
-         default_access_point_gain_g[i] = '\0';
+         default_access_point_gain_g[i] = ' ';
       }
    }
 
@@ -747,10 +773,10 @@ void save_default_access_point_gain() {
       access_point_starting_position++;
    }
 
-   for (unsigned char i = 0; i < DEFAULT_ACCESS_POINT_GAIN_SIZE; i++) {
+   for (unsigned char i = DEFAULT_ACCESS_POINT_GAIN_SIZE - 1; i != 0xFF; i--) {
       if (*access_point_starting_position == ',') {
-         for (unsigned char i2 = i; i2 < DEFAULT_ACCESS_POINT_GAIN_SIZE; i2++) {
-            default_access_point_gain_g[i2] = '\0';
+         for (unsigned char i2 = i; i2 != 0xFF; i2--) {
+            default_access_point_gain_g[i2] = ' ';
          }
          break;
       }
@@ -1118,26 +1144,26 @@ void send_usard_data(char *string) {
 /**
  * Supports only 9 parameters (1 - 9). Do not forget to call free() function on returned pointer when it's no longer needed
  *
- * *parameters array of pointers to strings. The last parameter has to be NULL
+ * *parameters - array of pointers to strings. The last parameter has to be NULL
  */
 void *set_string_parameters(char string[], char *parameters[]) {
    unsigned char open_brace_found = 0;
-   unsigned char parameters_length = 0;
+   unsigned char parameters_amount = 0;
    unsigned short result_string_length = 0;
 
-   for (; parameters[parameters_length] != NULL; parameters_length++) {
+   for (; parameters[parameters_amount] != NULL; parameters_amount++) {
    }
 
-   // Calculate the length without symbols to be replaced ('{x}')
+   // Calculate the length without symbols to be replaced ('<x>')
    for (char *string_pointer = string; *string_pointer != '\0'; string_pointer++) {
-      if (*string_pointer == '{') {
+      if (*string_pointer == '<') {
          if (open_brace_found) {
             return NULL;
          }
          open_brace_found = 1;
          continue;
       }
-      if (*string_pointer == '}') {
+      if (*string_pointer == '>') {
          if (!open_brace_found) {
             return NULL;
          }
@@ -1161,8 +1187,7 @@ void *set_string_parameters(char string[], char *parameters[]) {
    // 1 is for the last \0 character
    result_string_length++;
 
-   char *allocated_result;
-   allocated_result = malloc(result_string_length); // (string_length + 1) * sizeof(char)
+   char *allocated_result = malloc(result_string_length); // (string_length + 1) * sizeof(char)
 
    if (allocated_result == NULL) {
       return NULL;
@@ -1172,7 +1197,7 @@ void *set_string_parameters(char string[], char *parameters[]) {
    for (; result_string_index < result_string_length - 1; result_string_index++) {
       char input_string_symbol = string[input_string_index];
 
-      if (input_string_symbol == '{') {
+      if (input_string_symbol == '<') {
          input_string_index++;
          input_string_symbol = string[input_string_index] ;
 
@@ -1181,7 +1206,7 @@ void *set_string_parameters(char string[], char *parameters[]) {
          }
 
          input_string_symbol -= 48; // Now it's not allocated_result char character, but allocated_result number
-         if (input_string_symbol > parameters_length) {
+         if (input_string_symbol > parameters_amount) {
             return NULL;
          }
          input_string_index += 2;
@@ -1210,6 +1235,9 @@ unsigned short get_string_length(char string[]) {
    return length;
 }
 
+/**
+ * Do not forget to call free() function on returned pointer when it's no longer needed
+ */
 void *short_to_string(unsigned short number) {
    if (number == 0) {
       return "0";
@@ -1221,7 +1249,7 @@ void *short_to_string(unsigned short number) {
    char *result_string_pointer = NULL;
 
    for (unsigned char string_index = 5; string_index > 0; string_index--, divider /= 10) {
-      char result_character = (char)(remaining / divider);
+      char result_character = (char) (remaining / divider);
 
       if (result_string_pointer == NULL && result_character) {
          result_string_pointer = malloc(string_index + 1);
@@ -1236,6 +1264,19 @@ void *short_to_string(unsigned short number) {
    }
    result_string_pointer[string_length] = '\0';
    return result_string_pointer;
+}
+
+/**
+ * Do not forget to call free() function on returned pointer when it's no longer needed
+ */
+void *array_to_string(char array[], unsigned char array_length) {
+   char *result = malloc(array_length + 1);
+
+   for (unsigned char i = 0; i < array_length; i++) {
+      result[i] = array[i];
+   }
+   result[array_length] = '\0';
+   return result;
 }
 
 void clear_usart_data_received_buffer() {
