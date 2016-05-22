@@ -22,6 +22,9 @@
 #define MOTION_SENSOR_EXTI_PIN_SOURCE EXTI_PinSource3
 #define MOTION_SENSOR_INPUT_PORT GPIOA
 #define ESP8266_CONTROL_PIN GPIO_Pin_12
+#define ESP8266_CONTROL_PORT GPIOA
+#define BEEPER_PIN GPIO_Pin_7
+#define BEEPER_PORT GPIOA
 
 #define USART_DATA_RECEIVED_FLAG 1
 #define SERVER_IS_AVAILABLE_FLAG 2
@@ -150,6 +153,7 @@ void Pins_Config();
 void TIMER3_Confing();
 void TIMER6_Confing();
 void EXTERNAL_Interrupt_Config();
+void SystemTimer_Config();
 void set_flag(unsigned int *flags, unsigned int flag_value);
 void reset_flag(unsigned int *flags, unsigned int flag_value);
 unsigned char read_flag_state(unsigned int *flags, unsigned int flag_value);
@@ -201,6 +205,14 @@ void add_piped_task_into_history(unsigned int task);
 unsigned int get_last_piped_task_in_history();
 void save_default_access_point_gain();
 
+void SysTick_Handler() {
+   if (GPIO_ReadOutputDataBit(BEEPER_PORT, BEEPER_PIN)) {
+      GPIO_WriteBit(BEEPER_PORT, BEEPER_PIN, Bit_RESET);
+   } else {
+      GPIO_WriteBit(BEEPER_PORT, BEEPER_PIN, Bit_SET);
+   }
+}
+
 void DMA1_Channel2_3_IRQHandler() {
    DMA_ClearITPendingBit(DMA1_IT_TC2);
 }
@@ -239,7 +251,12 @@ void TIM3_IRQHandler() {
 void EXTI2_3_IRQHandler() {
    if (EXTI_GetITStatus(EXTI_Line3)) {
       EXTI_ClearITPendingBit(EXTI_Line3);
-      GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN);
+
+      if (GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN)) {
+         GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_SET);
+      } else {
+         GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_RESET);
+      }
    }
 }
 
@@ -280,6 +297,7 @@ int main() {
    TIMER3_Confing();
    TIMER6_Confing();
    EXTERNAL_Interrupt_Config();
+   SystemTimer_Config();
 
    add_piped_task_to_send_into_tail(DISABLE_ECHO_FLAG);
    add_piped_task_to_send_into_tail(GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
@@ -954,19 +972,19 @@ void Clock_Config() {
 }
 
 void Pins_Config() {
-   // Connect BOOT0 to ground
+   // Connect BOOT0 to ground, RESET to VDD
 
    RCC_AHBPeriphClockCmd(RCC_AHBPeriph_GPIOA | RCC_AHBPeriph_GPIOB, ENABLE);
 
    GPIO_InitTypeDef gpioInitType;
-   gpioInitType.GPIO_Pin = 0x89E1; // PA13, PA14 - Debugger pins
+   gpioInitType.GPIO_Pin = 0x8961; // PA13, PA14 - Debugger pins
    gpioInitType.GPIO_Mode = GPIO_Mode_IN;
    gpioInitType.GPIO_Speed = GPIO_Speed_Level_2; // 10 MHz
    gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
    GPIO_Init(GPIOA, &gpioInitType);
 
    // Motion sensor input
-   gpioInitType.GPIO_PuPd = GPIO_PuPd_NOPULL;
+   gpioInitType.GPIO_PuPd = GPIO_PuPd_DOWN;
    gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN;
    GPIO_Init(MOTION_SENSOR_INPUT_PORT, &gpioInitType);
 
@@ -996,6 +1014,10 @@ void Pins_Config() {
    gpioInitType.GPIO_Pin = SERVER_AVAILABILITI_LED_PIN;
    GPIO_Init(SERVER_AVAILABILITI_LED_PORT, &gpioInitType);
 
+   // BEEPER
+   gpioInitType.GPIO_Pin = BEEPER_PIN;
+   GPIO_Init(BEEPER_PORT, &gpioInitType);
+
    // MOTION SENSOR LED
    gpioInitType.GPIO_Pin = MOTION_SENSOR_LED_PIN;
    GPIO_Init(MOTION_SENSOR_LED_PORT, &gpioInitType);
@@ -1003,7 +1025,7 @@ void Pins_Config() {
    // ESP8266 enable/disable
    gpioInitType.GPIO_Pin = ESP8266_CONTROL_PIN;
    gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
-   GPIO_Init(GPIOA, &gpioInitType);
+   GPIO_Init(ESP8266_CONTROL_PORT, &gpioInitType);
 }
 
 /**
@@ -1101,7 +1123,7 @@ void EXTERNAL_Interrupt_Config() {
    EXTI_InitTypeDef EXTI_InitStructure;
    EXTI_InitStructure.EXTI_Line = EXTI_Line3;
    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
-   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Falling; // EXTI_Trigger_Rising
+   EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
    EXTI_Init(&EXTI_InitStructure);
 
@@ -1112,6 +1134,12 @@ void EXTERNAL_Interrupt_Config() {
    NVIC_Init(&NVIC_InitTypeInitStructure);
 
    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+}
+
+void SystemTimer_Config() {
+   SysTick_Config(700); // 16MHz / 8 / 4kHz of Beeper
+   SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
+   //SysTick_IRQn
 }
 
 void set_flag(unsigned int *flags, unsigned int flag_value) {
@@ -1290,16 +1318,16 @@ void clear_usart_data_received_buffer() {
 }
 
 void enable_esp8266() {
-   GPIO_WriteBit(GPIOA, ESP8266_CONTROL_PIN, Bit_RESET);
+   GPIO_WriteBit(ESP8266_CONTROL_PORT, ESP8266_CONTROL_PIN, Bit_RESET);
    esp8266_disabled_timer_g = TIMER6_5S;
 }
 
 void disable_esp8266() {
-   GPIO_WriteBit(GPIOA, ESP8266_CONTROL_PIN, Bit_SET);
+   GPIO_WriteBit(ESP8266_CONTROL_PORT, ESP8266_CONTROL_PIN, Bit_SET);
    GPIO_WriteBit(NETWORK_STATUS_LED_PORT, NETWORK_STATUS_LED_PIN, Bit_RESET);
 }
 
 unsigned char is_esp8266_enabled(unsigned char include_timer) {
-   return include_timer ? (!GPIO_ReadOutputDataBit(GPIOA, ESP8266_CONTROL_PIN) && esp8266_disabled_timer_g == 0) :
-         !GPIO_ReadOutputDataBit(GPIOA, ESP8266_CONTROL_PIN);
+   return include_timer ? (!GPIO_ReadOutputDataBit(ESP8266_CONTROL_PORT, ESP8266_CONTROL_PIN) && esp8266_disabled_timer_g == 0) :
+         !GPIO_ReadOutputDataBit(ESP8266_CONTROL_PORT, ESP8266_CONTROL_PIN);
 }
