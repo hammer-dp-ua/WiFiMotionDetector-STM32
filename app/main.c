@@ -29,7 +29,7 @@
 #define USART_DATA_RECEIVED_FLAG 1
 #define SERVER_IS_AVAILABLE_FLAG 2
 #define SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG 4
-#define SENDING_USART_ERRORS_OVERFLOW_FLAG 8
+#define ALARM_FLAG 8
 
 #define GET_VISIBLE_NETWORK_LIST_FLAG 1
 #define DISABLE_ECHO_FLAG 2
@@ -64,6 +64,7 @@
 #define TIMER3_PERIOD_MS 0.13f
 #define TIMER3_PERIOD_SEC (TIMER3_PERIOD_MS / 1000)
 #define TIMER3_100MS (unsigned short)(100 / TIMER3_PERIOD_MS)
+#define TIMER6_200MS 2
 #define TIMER6_1S 10
 #define TIMER6_2S 20
 #define TIMER6_5S 50
@@ -142,6 +143,8 @@ volatile unsigned char esp8266_disabled_timer_g = TIMER6_5S;
 volatile unsigned char resending_requests_counter_g;
 volatile unsigned short checking_connection_status_and_server_availability_counter_g;
 volatile unsigned short visible_network_list_counter_g;
+volatile unsigned short alarm_timer_g;
+volatile unsigned char beeper_period_timer_g;
 
 volatile unsigned short usart_overrun_errors_counter_g;
 volatile unsigned short usart_idle_line_detection_counter_g;
@@ -153,7 +156,8 @@ void Pins_Config();
 void TIMER3_Confing();
 void TIMER6_Confing();
 void EXTERNAL_Interrupt_Config();
-void SystemTimer_Config();
+void turn_beeper_on();
+void turn_beeper_off();
 void set_flag(unsigned int *flags, unsigned int flag_value);
 void reset_flag(unsigned int *flags, unsigned int flag_value);
 unsigned char read_flag_state(unsigned int *flags, unsigned int flag_value);
@@ -232,6 +236,12 @@ void TIM6_DAC_IRQHandler() {
    if (esp8266_disabled_timer_g > 0) {
       esp8266_disabled_timer_g--;
    }
+   if (alarm_timer_g) {
+      alarm_timer_g--;
+   }
+   if (beeper_period_timer_g) {
+      beeper_period_timer_g--;
+   }
 }
 
 void TIM3_IRQHandler() {
@@ -254,6 +264,11 @@ void EXTI2_3_IRQHandler() {
 
       if (GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN)) {
          GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_SET);
+
+         if (!alarm_timer_g) {
+            set_flag(&general_flags_g, ALARM_FLAG);
+            alarm_timer_g = TIMER6_60S;
+         }
       } else {
          GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_RESET);
       }
@@ -297,7 +312,6 @@ int main() {
    TIMER3_Confing();
    TIMER6_Confing();
    EXTERNAL_Interrupt_Config();
-   SystemTimer_Config();
 
    add_piped_task_to_send_into_tail(DISABLE_ECHO_FLAG);
    add_piped_task_to_send_into_tail(GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
@@ -305,6 +319,8 @@ int main() {
    add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
    add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
    add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
+
+   unsigned char beeper_counter = 0;
 
    while (1) {
       if (is_esp8266_enabled(1)) {
@@ -460,7 +476,6 @@ int main() {
          }
 
          if (send_usart_data_errors_counter_g > 5 || resending_requests_counter_g > 10) {
-            set_flag(&general_flags_g, SENDING_USART_ERRORS_OVERFLOW_FLAG);
             send_usart_data_errors_counter_g = 0;
             resending_requests_counter_g = 0;
 
@@ -471,6 +486,36 @@ int main() {
 
             successfully_received_flags_g = 0;
             sent_flag_g = 0;
+         }
+
+         if (read_flag_state(&general_flags_g, ALARM_FLAG)) {
+            reset_flag(&general_flags_g, ALARM_FLAG);
+
+            beeper_counter++;
+            beeper_period_timer_g = 0;
+         }
+         if (alarm_timer_g && beeper_counter && !beeper_period_timer_g) {
+            beeper_period_timer_g = TIMER6_200MS;
+
+            switch(beeper_counter) {
+            case 1:
+               turn_beeper_on();
+               beeper_counter++;
+               break;
+            case 2:
+               turn_beeper_off();
+               beeper_counter++;
+               break;
+            case 3:
+               turn_beeper_on();
+               beeper_counter++;
+               break;
+            default:
+               turn_beeper_off();
+               beeper_counter = 0;
+               beeper_period_timer_g = 0;
+               break;
+            }
          }
       } else if (esp8266_disabled_counter_g >= TIMER6_1S) {
          esp8266_disabled_counter_g = 0;
@@ -1136,10 +1181,14 @@ void EXTERNAL_Interrupt_Config() {
    RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
 }
 
-void SystemTimer_Config() {
-   SysTick_Config(700); // 16MHz / 8 / 4kHz of Beeper
+void turn_beeper_on() {
+   SysTick_Config(1000); // 16MHz / 8 / 2kHz of Beeper
    SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
-   //SysTick_IRQn
+}
+
+void turn_beeper_off() {
+   SysTick_Config(1); // Turn off
+   SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
 }
 
 void set_flag(unsigned int *flags, unsigned int flag_value) {
