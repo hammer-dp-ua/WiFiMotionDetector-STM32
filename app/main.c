@@ -121,13 +121,13 @@ char ESP8226_REQUEST_GET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const")
 char ESP8226_RESPONSE_CURRENT_OWN_IP_ADDRESS_PREFIX[] __attribute__ ((section(".text.const"))) = "+CIPSTA_DEF:ip:";
 char ESP8226_REQUEST_SET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF=\"<1>\"\r\n";
 char ESP8226_REQUEST_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) =
-      "GET /server/esp8266/test HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
+      "GET /server/esp8266/test HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
 char ESP8226_REQUEST_SEND_STATUS_INFO_AND_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) =
-      "POST /server/esp8266/statusInfo HTTP/1.1\r\nContent-Length: <1>\r\nHost: <2>\r\nUser-Agent: ESP8266\r\nContent-Type: application/json\r\nAccept: application/json\r\nConnection: close\r\n\r\n<3>\r\n";
+      "POST /server/esp8266/statusInfo HTTP/1.1\r\nContent-Length: <1>\r\nHost: <2>\r\nUser-Agent: ESP8266\r\nContent-Type: application/json\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n<3>\r\n";
 char GAIN_JSON[] __attribute__ ((section(".text.const"))) = "{\"gain\":\"<1>\"}";
 char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
 char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) =
-      "GET /server/esp8266/alarm HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: close\r\n\r\n";
+      "GET /server/esp8266/alarm HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
 
 char *usart_data_to_be_transmitted_buffer_g = NULL;
 char usart_data_received_buffer_g[USART_DATA_RECEIVED_BUFFER_SIZE];
@@ -145,7 +145,7 @@ volatile unsigned short response_timeout_timer_g;
 volatile unsigned char esp8266_disabled_counter_g;
 volatile unsigned char esp8266_disabled_timer_g = TIMER6_5S;
 volatile unsigned char resending_requests_counter_g;
-volatile unsigned short checking_connection_status_and_server_availability_counter_g;
+unsigned short checking_connection_status_and_server_availability_counter_g;
 volatile unsigned short visible_network_list_counter_g;
 volatile unsigned short alarm_inactive_timer_g;
 volatile unsigned char beeper_period_timer_g;
@@ -210,7 +210,7 @@ void get_own_ip_address();
 void set_own_ip_address();
 void close_connection();
 void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag_value, char to_be_contained_in_response[]);
-void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send);
+void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send, unsigned short *counter);
 void add_piped_task_into_history(unsigned int task);
 unsigned int get_last_piped_task_in_history();
 void save_default_access_point_gain();
@@ -285,6 +285,16 @@ void EXTI2_3_IRQHandler() {
 }
 
 void USART1_IRQHandler() {
+   if (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET) {
+      TIM_SetCounter(TIM3, 0);
+      usart_data_received_buffer_g[usart_received_bytes_g] = USART_ReceiveData(USART1);
+      usart_received_bytes_g++;
+
+      if (usart_received_bytes_g >= USART_DATA_RECEIVED_BUFFER_SIZE) {
+         usart_received_bytes_g = 0;
+      }
+   }
+
    if (USART_GetFlagStatus(USART1, USART_FLAG_ORE)) {
       USART_ClearITPendingBit(USART1, USART_IT_ORE);
       USART_ClearFlag(USART1, USART_FLAG_ORE);
@@ -301,14 +311,6 @@ void USART1_IRQHandler() {
       USART_ClearITPendingBit(USART1, USART_IT_ORE);
       USART_ClearFlag(USART1, USART_FLAG_FE);
       usart_framing_errors_counter_g++;
-   } else if (USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == SET) {
-      TIM_SetCounter(TIM3, 0);
-      usart_data_received_buffer_g[usart_received_bytes_g] = USART_ReceiveData(USART1);
-      usart_received_bytes_g++;
-
-      if (usart_received_bytes_g >= USART_DATA_RECEIVED_BUFFER_SIZE) {
-         usart_received_bytes_g = 0;
-      }
    }
 }
 
@@ -439,6 +441,7 @@ int main() {
 
                if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_SET);
+                  checking_connection_status_and_server_availability_counter_g = 0;
                } else {
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
                }
@@ -473,7 +476,7 @@ int main() {
             }
          }*/
 
-         check_connection_status_and_server_availability(current_piped_task_to_send);
+         check_connection_status_and_server_availability(current_piped_task_to_send, &checking_connection_status_and_server_availability_counter_g);
 
          if (visible_network_list_counter_g >= TIMER6_10MIN) {
             visible_network_list_counter_g = 0;
@@ -579,9 +582,9 @@ int main() {
    }
 }
 
-void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send) {
-   if (checking_connection_status_and_server_availability_counter_g >= TIMER6_60S && !current_piped_task_to_send) {
-      checking_connection_status_and_server_availability_counter_g = 0;
+void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send, unsigned short *counter) {
+   if (*counter >= TIMER6_60S && !current_piped_task_to_send) {
+      *counter = 0;
       add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
       add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
    }
@@ -1214,6 +1217,8 @@ void DMA_Config() {
    DMA_Init(USART1_TX_DMA_CHANNEL, &dmaInitType);
 
    DMA_ITConfig(USART1_TX_DMA_CHANNEL, DMA_IT_TC, ENABLE);
+
+   NVIC_SetPriority(USART1_IRQn, 10);
    NVIC_EnableIRQ(USART1_IRQn);
 
    DMA_Cmd(USART1_TX_DMA_CHANNEL, ENABLE);
@@ -1235,6 +1240,8 @@ void USART_Config() {
 
    USART_ITConfig(USART1, USART_IT_RXNE, ENABLE);
    USART_ITConfig(USART1, USART_IT_ERR, ENABLE);
+
+   NVIC_SetPriority(DMA1_Channel2_3_IRQn, 11);
    NVIC_EnableIRQ(DMA1_Channel2_3_IRQn);
 
    USART_DMACmd(USART1, USART_DMAReq_Tx, ENABLE);
