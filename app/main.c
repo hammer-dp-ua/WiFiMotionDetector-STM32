@@ -75,6 +75,7 @@
 #define TIMER6_10S 100
 #define TIMER6_30S 300
 #define TIMER6_60S 600
+#define TIMER6_2MIN 1200
 #define TIMER6_10MIN 6000
 
 #define EXECUTE_FUNCTION 1
@@ -107,7 +108,7 @@ char ESP8226_REQUEST_SERVER_PING[] __attribute__ ((section(".text.const"))) = "A
 char ESP8226_REQUEST_START_SENDING[] __attribute__ ((section(".text.const"))) = "AT+CIPSEND=<1>\r\n";
 char ESP8226_RESPONSE_START_SENDING_READY[] __attribute__ ((section(".text.const"))) = ">";
 char ESP8226_RESPONSE_SENDING[] __attribute__ ((section(".text.const"))) = "busy s...";
-char ESP8226_RESPONSE_SUCCSESSFULLY_SENT[] __attribute__ ((section(".text.const"))) = "SEND OK";
+char ESP8226_RESPONSE_SUCCSESSFULLY_SENT[] __attribute__ ((section(".text.const"))) = "\r\nSEND OK\r\n";
 char ESP8226_RESPONSE_ALREADY_CONNECTED[] __attribute__ ((section(".text.const"))) = "ALREADY CONNECTED";
 char ESP8226_RESPONSE_PREFIX[] __attribute__ ((section(".text.const"))) = "+IPD";
 char ESP8226_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "192.168.0.20";
@@ -128,6 +129,7 @@ char GAIN_JSON[] __attribute__ ((section(".text.const"))) = "{\"gain\":\"<1>\"}"
 char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
 char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) =
       "GET /server/esp8266/alarm HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
+char ESP8226_RESPONSE_HTTP_STATUS_200_OK[] __attribute__ ((section(".text.const"))) = "200 OK";
 
 char *usart_data_to_be_transmitted_buffer_g = NULL;
 char usart_data_received_buffer_g[USART_DATA_RECEIVED_BUFFER_SIZE];
@@ -179,6 +181,8 @@ unsigned char is_usart_response_contains_elements(char *data_to_be_contained[], 
 unsigned char is_usart_response_contains_element(char string_to_be_contained[]);
 unsigned char contains_string(char being_compared_string[], char string_to_be_contained[]);
 void clear_usart_data_received_buffer();
+unsigned short get_received_data_length();
+unsigned char is_received_data_length_equal(unsigned short length);
 void *set_string_parameters(char string[], char *parameters[]);
 unsigned short get_string_length(char string[]);
 unsigned int get_current_piped_task_to_send();
@@ -439,7 +443,8 @@ int main() {
             if (read_flag_state(&successfully_received_flags_g, GET_SERVER_AVAILABILITY_REQUEST_FLAG)) {
                on_successfully_receive_general_actions(GET_SERVER_AVAILABILITY_REQUEST_FLAG);
 
-               if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
+               if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE) ||
+                     is_usart_response_contains_element(ESP8226_RESPONSE_HTTP_STATUS_200_OK)) {
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_SET);
                   checking_connection_status_and_server_availability_counter_g = 0;
                } else {
@@ -449,9 +454,14 @@ int main() {
             if (read_flag_state(&successfully_received_flags_g, SEND_ALARM_REQUEST_FLAG)) {
                on_successfully_receive_general_actions(SEND_ALARM_REQUEST_FLAG);
 
-               if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
+               if (is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE) ||
+                     is_usart_response_contains_element(ESP8226_RESPONSE_HTTP_STATUS_200_OK)) {
+                  GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_SET);
                   set_flag(&general_flags_g, ALARM_SERVER_RECEIVED_FLAG);
+               } else {
+                  GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
                }
+
             }
          }
 
@@ -478,7 +488,7 @@ int main() {
 
          check_connection_status_and_server_availability(current_piped_task_to_send, &checking_connection_status_and_server_availability_counter_g);
 
-         if (visible_network_list_counter_g >= TIMER6_10MIN) {
+         if (visible_network_list_counter_g >= TIMER6_2MIN) {
             visible_network_list_counter_g = 0;
             add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
          }
@@ -583,7 +593,7 @@ int main() {
 }
 
 void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send, unsigned short *counter) {
-   if (*counter >= TIMER6_60S && !current_piped_task_to_send) {
+   if (*counter >= TIMER6_30S && !current_piped_task_to_send) {
       *counter = 0;
       add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
       add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
@@ -627,7 +637,7 @@ void execute_function_for_current_piped_task(unsigned int current_piped_task_to_
       } else if (current_piped_task_to_send == GET_SERVER_AVAILABILITY_REQUEST_FLAG) {
          // Request 2 part. Sending
          final_task_for_request_resending_g = GET_SERVER_AVAILABILITY_REQUEST_FLAG;
-         execute_usart_data_sending(resend_usart_get_request_using_global_final_task, 5, DO_NOT_EXECUTE_FUNCTION);
+         execute_usart_data_sending(resend_usart_get_request_using_global_final_task, 10, DO_NOT_EXECUTE_FUNCTION);
 
          send_request(GET_SERVER_AVAILABILITY_REQUEST_FLAG);
       } else if (current_piped_task_to_send == SEND_ALARM_FLAG) {
@@ -637,7 +647,7 @@ void execute_function_for_current_piped_task(unsigned int current_piped_task_to_
       } else if (current_piped_task_to_send == SEND_ALARM_REQUEST_FLAG) {
          // Request 2 part. Sending
          final_task_for_request_resending_g = SEND_ALARM_REQUEST_FLAG;
-         execute_usart_data_sending(resend_usart_get_request_using_global_final_task, 5, DO_NOT_EXECUTE_FUNCTION);
+         execute_usart_data_sending(resend_usart_get_request_using_global_final_task, 10, DO_NOT_EXECUTE_FUNCTION);
 
          send_request(SEND_ALARM_REQUEST_FLAG);
       }
@@ -729,10 +739,20 @@ void set_appropriate_successfully_recieved_flag() {
       set_flag(&successfully_received_flags_g, CLOSE_CONNECTION_FLAG);
    }
    if (read_flag_state(&sent_flag_g, GET_SERVER_AVAILABILITY_REQUEST_FLAG)) {
-      set_appropriate_successfully_recieved_flag_general_action(GET_SERVER_AVAILABILITY_REQUEST_FLAG, ESP8226_RESPONSE_SUCCSESSFULLY_SENT);
+      if (is_received_data_length_equal(get_string_length(ESP8226_RESPONSE_SUCCSESSFULLY_SENT))) {
+         // Sometimes only "SEND OK" is received. Another data will be received later
+         clear_usart_data_received_buffer();
+      } else {
+         set_appropriate_successfully_recieved_flag_general_action(GET_SERVER_AVAILABILITY_REQUEST_FLAG, ESP8226_RESPONSE_SUCCSESSFULLY_SENT);
+      }
    }
    if (read_flag_state(&sent_flag_g, SEND_ALARM_REQUEST_FLAG)) {
-      set_appropriate_successfully_recieved_flag_general_action(SEND_ALARM_REQUEST_FLAG, ESP8226_RESPONSE_SUCCSESSFULLY_SENT);
+      if (is_received_data_length_equal(get_string_length(ESP8226_RESPONSE_SUCCSESSFULLY_SENT))) {
+         // Sometimes only "SEND OK" is received. Another data will be received later
+         clear_usart_data_received_buffer();
+      } else {
+         set_appropriate_successfully_recieved_flag_general_action(SEND_ALARM_REQUEST_FLAG, ESP8226_RESPONSE_SUCCSESSFULLY_SENT);
+      }
    }
 }
 
@@ -1269,7 +1289,7 @@ void EXTERNAL_Interrupt_Config() {
 }
 
 void turn_beeper_on() {
-   SysTick_Config(1000); // 16MHz / 8 / 2kHz of Beeper
+   SysTick_Config(300); // 16MHz / 8 / 4kHz of Beeper
    SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
 }
 
@@ -1294,6 +1314,10 @@ void send_usard_data(char *string) {
    clear_usart_data_received_buffer();
    DMA_Cmd(USART1_TX_DMA_CHANNEL, DISABLE);
    unsigned short bytes_to_send = get_string_length(string);
+
+   if (string[0] == 'A' && string[1] == 'T' && string[2] == 'A' && string[3] == 'T') {
+      clear_usart_data_received_buffer();
+   }
 
    if (bytes_to_send == 0) {
       return;
@@ -1444,13 +1468,33 @@ void *array_to_string(char array[], unsigned char array_length) {
 }
 
 void clear_usart_data_received_buffer() {
-   for (int i = 0; i < USART_DATA_RECEIVED_BUFFER_SIZE; i++) {
+   for (unsigned short i = 0; i < USART_DATA_RECEIVED_BUFFER_SIZE; i++) {
       if (usart_data_received_buffer_g[i] == '\0') {
          break;
       }
 
       usart_data_received_buffer_g[i] = '\0';
    }
+}
+
+unsigned short get_received_data_length() {
+   for (unsigned short i = 0; i < USART_DATA_RECEIVED_BUFFER_SIZE; i++) {
+      if (usart_data_received_buffer_g[i] == '\0') {
+         return i;
+      }
+   }
+   return 0;
+}
+
+unsigned char is_received_data_length_equal(unsigned short length) {
+   for (unsigned short i = 0; i < USART_DATA_RECEIVED_BUFFER_SIZE; i++) {
+      if (i == length && usart_data_received_buffer_g[i] == '\0') {
+         return 1;
+      } else if (i > length) {
+         return 0;
+      }
+   }
+   return 0;
 }
 
 void enable_esp8266() {
