@@ -45,7 +45,7 @@
 #include "stm32f0xx_gpio.h"
 #include "stm32f0xx_syscfg.h"
 //#include "stm32f0xx_i2c.h"
-//#include "stm32f0xx_iwdg.h"
+#include "stm32f0xx_iwdg.h"
 #include "stm32f0xx_pwr.h"
 #include "stm32f0xx_rcc.h"
 //#include "stm32f0xx_rtc.h"

@@ -101,7 +101,7 @@ char ESP8226_RESPONSE_NOT_CONNECTED_STATUS[] __attribute__ ((section(".text.cons
 char ESP8226_REQUEST_CONNECT_TO_NETWORK_AND_SAVE[] __attribute__ ((section(".text.const"))) = "AT+CWJAP_DEF=\"<1>\",\"<2>\"\r\n";
 char ESP8226_REQUEST_GET_VERSION_ID[] __attribute__ ((section(".text.const"))) = "AT+GMR\r\n";
 char ESP8226_RESPONSE_CONNECTED[] __attribute__ ((section(".text.const"))) = "CONNECT";
-char ESP8226_CONNECTION_CLOSED[] __attribute__ ((section(".text.const"))) = "CLOSED";
+char ESP8226_CONNECTION_CLOSED[] __attribute__ ((section(".text.const"))) = "CLOSED\r\n\r\nOK";
 char ESP8226_REQUEST_CONNECT_TO_SERVER[] __attribute__ ((section(".text.const"))) = "AT+CIPSTART=\"TCP\",\"<1>\",<2>\r\n";
 char ESP8226_REQUEST_DISCONNECT_FROM_SERVER[] __attribute__ ((section(".text.const"))) = "AT+CIPCLOSE\r\n";
 char ESP8226_REQUEST_SERVER_PING[] __attribute__ ((section(".text.const"))) = "AT+PING=\"<1>\"\r\n";
@@ -139,14 +139,13 @@ volatile unsigned int final_task_for_request_resending_g;
 
 void (*send_usart_data_function_g)() = NULL;
 void (*on_response_g)() = NULL;
-volatile unsigned int send_usart_data_timer_counter_g;
+volatile unsigned int send_usart_data_time_counter_g;
 volatile unsigned short send_usart_data_timout_sec_g = 0xFFFF;
 volatile unsigned short send_usart_data_errors_counter_g;
 volatile unsigned short network_searching_status_led_counter_g;
 volatile unsigned short response_timeout_timer_g;
 volatile unsigned char esp8266_disabled_counter_g;
 volatile unsigned char esp8266_disabled_timer_g = TIMER6_5S;
-volatile unsigned char resending_requests_counter_g;
 unsigned short checking_connection_status_and_server_availability_counter_g;
 volatile unsigned short visible_network_list_counter_g;
 volatile unsigned short alarm_inactive_timer_g;
@@ -158,6 +157,7 @@ volatile unsigned short usart_idle_line_detection_counter_g;
 volatile unsigned short usart_noise_detection_counter_g;
 volatile unsigned short usart_framing_errors_counter_g;
 
+void IWDG_Config();
 void Clock_Config();
 void Pins_Config();
 void TIMER3_Confing();
@@ -207,6 +207,7 @@ void disable_esp8266();
 unsigned char is_esp8266_enabled(unsigned char include_timer);
 void clear_piped_request_commands_to_send();
 void delete_all_piped_tasks();
+unsigned char is_piped_task_to_send_scheduled(unsigned int task);
 void execute_function_for_current_piped_task(unsigned int current_piped_task_to_send, unsigned char send_usart_data_passed_time_sec);
 void get_server_avalability(unsigned int request_task);
 void send_alarm(unsigned int request_task);
@@ -265,8 +266,8 @@ void TIM3_IRQHandler() {
       set_flag(&general_flags_g, USART_DATA_RECEIVED_FLAG);
    }
    usart_received_bytes_g = 0;
-   if (send_usart_data_function_g != NULL || resending_requests_counter_g) {
-      send_usart_data_timer_counter_g++;
+   if (send_usart_data_function_g != NULL) {
+      send_usart_data_time_counter_g++;
    }
    network_searching_status_led_counter_g++;
 }
@@ -319,6 +320,7 @@ void USART1_IRQHandler() {
 }
 
 int main() {
+   IWDG_Config();
    Clock_Config();
    Pins_Config();
    disable_esp8266();
@@ -340,11 +342,10 @@ int main() {
    while (1) {
       if (is_esp8266_enabled(1)) {
          // Seconds
-         unsigned char send_usart_data_passed_time_sec = (unsigned char) (TIMER3_PERIOD_SEC * send_usart_data_timer_counter_g);
+         unsigned char send_usart_data_passed_time_sec = (unsigned char) (TIMER3_PERIOD_SEC * send_usart_data_time_counter_g);
 
          if (read_flag_state(&general_flags_g, USART_DATA_RECEIVED_FLAG)) {
             reset_flag(&general_flags_g, USART_DATA_RECEIVED_FLAG);
-            send_usart_data_timer_counter_g = 0;
 
             if (usart_data_to_be_transmitted_buffer_g != NULL) {
                free(usart_data_to_be_transmitted_buffer_g);
@@ -353,7 +354,6 @@ int main() {
 
             set_appropriate_successfully_recieved_flag();
          } else if (send_usart_data_function_g != NULL && send_usart_data_passed_time_sec >= send_usart_data_timout_sec_g) {
-            send_usart_data_timer_counter_g = 0;
             if (usart_data_to_be_transmitted_buffer_g != NULL) {
                free(usart_data_to_be_transmitted_buffer_g);
                usart_data_to_be_transmitted_buffer_g = NULL;
@@ -410,7 +410,6 @@ int main() {
             if (read_flag_state(&successfully_received_flags_g, GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG)) {
                on_successfully_receive_general_actions(GET_REQUEST_SENT_AND_RESPONSE_RECEIVED_FLAG);
 
-               resending_requests_counter_g = 0;
                if (on_response_g != NULL) {
                   on_response_g();
                   on_response_g = NULL;
@@ -488,7 +487,7 @@ int main() {
 
          check_connection_status_and_server_availability(current_piped_task_to_send, &checking_connection_status_and_server_availability_counter_g);
 
-         if (visible_network_list_counter_g >= TIMER6_2MIN) {
+         if (visible_network_list_counter_g >= TIMER6_10MIN) {
             visible_network_list_counter_g = 0;
             add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
          }
@@ -508,10 +507,10 @@ int main() {
             GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
          }
 
-         if (send_usart_data_errors_counter_g > 5 || resending_requests_counter_g > 10) {
+         if (send_usart_data_errors_counter_g > 5) {
             send_usart_data_errors_counter_g = 0;
-            resending_requests_counter_g = 0;
 
+            unsigned char is_alarm_occured = is_piped_task_to_send_scheduled(SEND_ALARM_FLAG);
             delete_all_piped_tasks();
             clear_piped_request_commands_to_send();
             on_response_g = NULL;
@@ -519,6 +518,10 @@ int main() {
 
             successfully_received_flags_g = 0;
             sent_flag_g = 0;
+
+            if (is_alarm_occured) {
+               add_piped_task_to_send_into_tail(SEND_ALARM_FLAG);
+            }
          }
 
          if (read_flag_state(&general_flags_g, ALARM_FLAG)) {
@@ -589,11 +592,13 @@ int main() {
          esp8266_disabled_counter_g = 0;
          enable_esp8266();
       }
+
+      IWDG_ReloadCounter();
    }
 }
 
 void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send, unsigned short *counter) {
-   if (*counter >= TIMER6_30S && !current_piped_task_to_send) {
+   if (*counter >= TIMER6_60S && !current_piped_task_to_send) {
       *counter = 0;
       add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
       add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
@@ -627,9 +632,8 @@ void execute_function_for_current_piped_task(unsigned int current_piped_task_to_
          execute_usart_data_sending(get_own_ip_address, 5, EXECUTE_FUNCTION);
       } else if (current_piped_task_to_send == SET_OWN_IP_ADDRESS_FLAG) {
          execute_usart_data_sending(set_own_ip_address, 2, EXECUTE_FUNCTION);
-      } else if (current_piped_task_to_send == CLOSE_CONNECTION_FLAG &&
-            (!resending_requests_counter_g || (resending_requests_counter_g && send_usart_data_passed_time_sec >= 4))) {
-         execute_usart_data_sending(close_connection, 5, EXECUTE_FUNCTION);
+      } else if (current_piped_task_to_send == CLOSE_CONNECTION_FLAG) {
+         execute_usart_data_sending(close_connection, 20, EXECUTE_FUNCTION);
       } else if (current_piped_task_to_send == GET_SERVER_AVAILABILITY_FLAG) {
          // Request 1 part. Preparation
          delete_piped_task(GET_SERVER_AVAILABILITY_FLAG);
@@ -851,8 +855,6 @@ void resend_usart_get_request_using_global_final_task() {
 }
 
 void resend_usart_get_request(unsigned int final_task) {
-   send_usart_data_timer_counter_g = 0;
-   resending_requests_counter_g++;
    send_usart_data_function_g = NULL;
    delete_piped_task(BYTES_TO_SEND_IN_REQUEST_IS_SET_FLAG);
    delete_piped_task(CLOSE_CONNECTION_FLAG);
@@ -999,6 +1001,15 @@ void delete_all_piped_tasks() {
    }
 }
 
+unsigned char is_piped_task_to_send_scheduled(unsigned int task) {
+   for (unsigned char i = 0; i < PIPED_TASKS_TO_SEND_SIZE; i++) {
+     if (piped_tasks_to_send_g[i] == task) {
+        return 1;
+     }
+   }
+   return 0;
+}
+
 void add_piped_task_into_history(unsigned int task) {
    if (task == 0) {
       return;
@@ -1106,6 +1117,15 @@ void execute_usart_data_sending(void (*function_to_execute)(), unsigned char tim
    if (execute_function == EXECUTE_FUNCTION) {
       function_to_execute();
    }
+}
+
+void IWDG_Config() {
+   IWDG_Enable();
+   IWDG_WriteAccessCmd(IWDG_WriteAccess_Enable);
+   IWDG_SetPrescaler(IWDG_Prescaler_256);
+   IWDG_SetReload(156); // 1 second
+   while (IWDG_GetFlagStatus(IWDG_FLAG_PVU) == SET);
+   while (IWDG_GetFlagStatus(IWDG_FLAG_RVU) == SET);
 }
 
 void Clock_Config() {
@@ -1311,13 +1331,10 @@ unsigned char read_flag_state(unsigned int *flags, unsigned int flag_value) {
 }
 
 void send_usard_data(char *string) {
+   send_usart_data_time_counter_g = 0;
    clear_usart_data_received_buffer();
    DMA_Cmd(USART1_TX_DMA_CHANNEL, DISABLE);
    unsigned short bytes_to_send = get_string_length(string);
-
-   if (string[0] == 'A' && string[1] == 'T' && string[2] == 'A' && string[3] == 'T') {
-      clear_usart_data_received_buffer();
-   }
 
    if (bytes_to_send == 0) {
       return;

@@ -188,10 +188,10 @@ void IWDG_SetReload(uint16_t Reload)
   * @param  None
   * @retval None
   */
-/*void IWDG_ReloadCounter(void)
+void IWDG_ReloadCounter(void)
 {
   IWDG->KR = KR_KEY_RELOAD;
-}*/
+}
 
 
 /**

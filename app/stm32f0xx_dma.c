@@ -432,13 +432,13 @@ void DMA_SetCurrDataCounter(DMA_Channel_TypeDef* DMAy_Channelx, uint16_t DataNum
   * @retval The number of remaining data units in the current DMAy Channelx
   *         transfer.
   */
-/*uint16_t DMA_GetCurrDataCounter(DMA_Channel_TypeDef* DMAy_Channelx)
+uint16_t DMA_GetCurrDataCounter(DMA_Channel_TypeDef* DMAy_Channelx)
 {
   // Check the parameters 
   assert_param(IS_DMA_ALL_PERIPH(DMAy_Channelx));
   // Return the number of remaining data units for DMAy Channelx 
   return ((uint16_t)(DMAy_Channelx->CNDTR));
-}*/
+}
 
 /**
   * @}
