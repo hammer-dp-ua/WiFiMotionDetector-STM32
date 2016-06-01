@@ -126,7 +126,8 @@ char ESP8226_REQUEST_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.co
       "GET /server/esp8266/test HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
 char ESP8226_REQUEST_SEND_STATUS_INFO_AND_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) =
       "POST /server/esp8266/statusInfo HTTP/1.1\r\nContent-Length: <1>\r\nHost: <2>\r\nUser-Agent: ESP8266\r\nContent-Type: application/json\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n<3>\r\n";
-char STATUS_JSON[] __attribute__ ((section(".text.const"))) = "{\"gain\":\"<1>\",\"errors\":\"<2>\"}";
+char STATUS_JSON[] __attribute__ ((section(".text.const"))) =
+      "{\"gain\":\"<1>\",\"errors\":\"<2>\",\"usartOverrunErrors\":\"<3>\",\"usartIdleLineDetections\":\"<4>\",\"usartNoiseDetection\":\"<5>\",\"usartFramingErrors\":\"<6>\",\"lastErrorTask\":\"<7>\"}";
 char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
 char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) =
       "GET /server/esp8266/alarm HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
@@ -144,6 +145,7 @@ volatile unsigned int send_usart_data_time_counter_g;
 volatile unsigned short send_usart_data_timout_sec_g = 0xFFFF;
 volatile unsigned char send_usart_data_errors_counter_g;
 volatile unsigned short send_usart_data_errors_unresetable_counter_g;
+volatile unsigned int last_error_task;
 volatile unsigned short network_searching_status_led_counter_g;
 volatile unsigned short response_timeout_timer_g;
 volatile unsigned char esp8266_disabled_counter_g;
@@ -165,7 +167,7 @@ void Pins_Config();
 void TIMER3_Confing();
 void TIMER6_Confing();
 void EXTERNAL_Interrupt_Config();
-void beep(unsigned char *beeper_counter);
+void beep_and_schedule_alarm(unsigned char *beeper_counter);
 void turn_beeper_on();
 void turn_beeper_off();
 void set_flag(unsigned int *flags, unsigned int flag_value);
@@ -196,7 +198,7 @@ void delete_piped_task(unsigned int task);
 void on_successfully_receive_general_actions(unsigned int successfully_received_flag);
 void prepare_http_request(char address[], char port[], char request[], void (*on_response)(), unsigned int request_task);
 void resend_usart_get_request_using_global_final_task();
-void *short_to_string(unsigned short number);
+void *num_to_string(unsigned int number);
 void *array_to_string(char array[], unsigned char array_length);
 void connect_to_server();
 void resend_usart_get_request(unsigned int final_task);
@@ -221,7 +223,7 @@ void set_own_ip_address();
 void close_connection();
 void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag_value, char to_be_contained_in_response[]);
 void add_error();
-void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send, unsigned short *counter);
+void check_connection_status_and_server_availability(unsigned short *counter);
 void add_piped_task_into_history(unsigned int task);
 unsigned int get_last_piped_task_in_history();
 void save_default_access_point_gain();
@@ -470,7 +472,7 @@ int main() {
          unsigned int current_piped_task_to_send = get_current_piped_task_to_send();
          execute_function_for_current_piped_task(current_piped_task_to_send, send_usart_data_passed_time_sec);
 
-         check_connection_status_and_server_availability(current_piped_task_to_send, &checking_connection_status_and_server_availability_counter_g);
+         check_connection_status_and_server_availability(&checking_connection_status_and_server_availability_counter_g);
 
          if (visible_network_list_counter_g >= TIMER6_10MIN) {
             visible_network_list_counter_g = 0;
@@ -493,6 +495,7 @@ int main() {
          }
 
          if (send_usart_data_errors_counter_g > 5 || is_piped_tasks_scheduler_full()) {
+
             send_usart_data_errors_counter_g = 0;
 
             unsigned char is_alarm_occured = is_piped_task_to_send_scheduled(SEND_ALARM_FLAG);
@@ -511,7 +514,7 @@ int main() {
             GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
          }
 
-         beep(&beeper_counter);
+         beep_and_schedule_alarm(&beeper_counter);
       } else if (esp8266_disabled_counter_g >= TIMER6_1S) {
          esp8266_disabled_counter_g = 0;
          enable_esp8266();
@@ -521,9 +524,8 @@ int main() {
    }
 }
 
-void beep(unsigned char *beeper_counter) {
+void beep_and_schedule_alarm(unsigned char *beeper_counter) {
    if (read_flag_state(&general_flags_g, ALARM_FLAG)) {
-      reset_flag(&general_flags_g, ALARM_FLAG);
 
       if (!beeper_inactive_timer_g) {
          beeper_inactive_timer_g = TIMER6_60S;
@@ -532,7 +534,10 @@ void beep(unsigned char *beeper_counter) {
          reset_flag(&general_flags_g, FREEZE_BEEPER_SERVER_ALARM_RECEIVED_FLAG);
       }
 
-      add_piped_task_to_send_into_tail(SEND_ALARM_FLAG);
+      if (is_piped_tasks_scheduler_empty()) {
+         add_piped_task_to_send_into_tail(SEND_ALARM_FLAG);
+         reset_flag(&general_flags_g, ALARM_FLAG);
+      }
    }
    if (read_flag_state(&general_flags_g, BEEPER_SIGNAL_ALARM_FLAG) && *beeper_counter && !beeper_period_timer_g) {
       beeper_period_timer_g = TIMER6_200MS;
@@ -596,8 +601,8 @@ void beep(unsigned char *beeper_counter) {
    }
 }
 
-void check_connection_status_and_server_availability(unsigned short current_piped_task_to_send, unsigned short *counter) {
-   if (*counter >= TIMER6_60S && !current_piped_task_to_send) {
+void check_connection_status_and_server_availability(unsigned short *counter) {
+   if (*counter >= TIMER6_60S && is_piped_tasks_scheduler_empty()) {
       *counter = 0;
       add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
       add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
@@ -772,21 +777,33 @@ void set_appropriate_successfully_recieved_flag_general_action(unsigned int flag
 void add_error() {
    send_usart_data_errors_counter_g++;
    send_usart_data_errors_unresetable_counter_g++;
-
+   last_error_task = get_current_piped_task_to_send();
 }
 
 void get_server_avalability(unsigned int request_task) {
    char *gain = array_to_string(default_access_point_gain_g, DEFAULT_ACCESS_POINT_GAIN_SIZE);
-   char *errors_amount_string = short_to_string(send_usart_data_errors_unresetable_counter_g);
-   char *parameters_for_status[] = {gain, errors_amount_string, NULL};
+   char *errors_amount_string = num_to_string(send_usart_data_errors_unresetable_counter_g);
+   char *usart_overrun_errors_counter_string = num_to_string(usart_overrun_errors_counter_g);
+   char *usart_idle_line_detection_counter_string = num_to_string(usart_idle_line_detection_counter_g);
+   char *usart_noise_detection_counter_string = num_to_string(usart_noise_detection_counter_g);
+   char *usart_framing_errors_counter_string = num_to_string(usart_framing_errors_counter_g);
+   char *last_error_task_string = num_to_string(last_error_task);
+   last_error_task = 0;
+   char *parameters_for_status[] = {gain, errors_amount_string, usart_overrun_errors_counter_string, usart_idle_line_detection_counter_string,
+         usart_noise_detection_counter_string, usart_framing_errors_counter_string, last_error_task_string, NULL};
    char *status_json = set_string_parameters(STATUS_JSON, parameters_for_status);
-   unsigned char status_string_length = (unsigned char) get_string_length(status_json);
-   char *status_string_length_string = short_to_string(status_string_length);
+   unsigned short status_string_length = get_string_length(status_json);
+   char *status_string_length_string = num_to_string(status_string_length);
    char *parameters_for_request[] = {status_string_length_string, ESP8226_SERVER_IP_ADDRESS, status_json, NULL};
    char *request = set_string_parameters(ESP8226_REQUEST_SEND_STATUS_INFO_AND_GET_SERVER_AVAILABILITY, parameters_for_request);
 
    free(gain);
    free(errors_amount_string);
+   free(usart_overrun_errors_counter_string);
+   free(usart_idle_line_detection_counter_string);
+   free(usart_noise_detection_counter_string);
+   free(usart_framing_errors_counter_string);
+   free(last_error_task_string);
    free(status_json);
    free(status_string_length_string);
 
@@ -842,7 +859,7 @@ void prepare_http_request(char address[], char port[], char request[], void (*ex
    piped_request_commands_to_send_g[PIPED_REQUEST_CIPSTART_COMMAND_INDEX] = set_string_parameters(ESP8226_REQUEST_CONNECT_TO_SERVER, parameters);
 
    unsigned short request_length = get_string_length(request);
-   char *request_length_string = short_to_string(request_length);
+   char *request_length_string = num_to_string(request_length);
    char *start_sending_parameters[] = {request_length_string, NULL};
    piped_request_commands_to_send_g[PIPED_REQUEST_CIPSEND_COMMAND_INDEX] = set_string_parameters(ESP8226_REQUEST_START_SENDING, start_sending_parameters);
    free(request_length_string);
@@ -1134,6 +1151,7 @@ void execute_usart_data_sending(void (*function_to_execute)(), unsigned char tim
 }
 
 void IWDG_Config() {
+   RCC_APB2PeriphClockCmd(RCC_APB2Periph_DBGMCU, ENABLE);
    DBGMCU_APB1PeriphConfig(DBGMCU_IWDG_STOP, ENABLE);
 
    IWDG_Enable();
@@ -1174,7 +1192,7 @@ void Pins_Config() {
 
    // For USART1
    gpioInitType.GPIO_Pin = (1<<GPIO_PinSource9) | (1<<GPIO_PinSource10);
-   gpioInitType.GPIO_PuPd = GPIO_PuPd_NOPULL;
+   gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
    gpioInitType.GPIO_Mode = GPIO_Mode_AF;
    gpioInitType.GPIO_OType = GPIO_OType_PP;
    GPIO_Init(GPIOA, &gpioInitType);
@@ -1414,7 +1432,7 @@ void *set_string_parameters(char string[], char *parameters[]) {
       return NULL;
    }
 
-   unsigned char result_string_index = 0, input_string_index = 0;
+   unsigned short result_string_index = 0, input_string_index = 0;
    for (; result_string_index < result_string_length - 1; result_string_index++) {
       char input_string_symbol = string[input_string_index];
 
@@ -1459,10 +1477,7 @@ unsigned short get_string_length(char string[]) {
 /**
  * Do not forget to call free() function on returned pointer when it's no longer needed
  */
-void *short_to_string(unsigned short number) {
-   unsigned short remaining = number;
-   unsigned short divider = 10000;
-   unsigned char string_length = 0;
+void *num_to_string(unsigned int number) {
    char *result_string_pointer = NULL;
 
    if (number == 0) {
@@ -1472,19 +1487,46 @@ void *short_to_string(unsigned short number) {
       return result_string_pointer;
    }
 
-   for (unsigned char string_index = 5; string_index > 0; string_index--, divider /= 10) {
+   unsigned char max_string_size;
+
+   if (number <= 0xFF) {
+      // unsigned char
+      max_string_size = 3;
+   } else if (number <= 0xFFFF) {
+      // unsigned short
+      max_string_size = 5;
+   } else if (number <= 0xFFFFFF) {
+      // unsigned int
+      max_string_size = 8;
+   } else {
+      // unsigned int
+      max_string_size = 10;
+   }
+
+   unsigned int divider = 1;
+
+   for (unsigned char i = 1; i < max_string_size; i++) {
+      divider *= 10;
+   }
+
+   unsigned int remaining = number;
+   unsigned char string_length = 0;
+
+   while (max_string_size > 0) {
       char result_character = (char) (remaining / divider);
 
       if (result_string_pointer == NULL && result_character) {
-         result_string_pointer = malloc(string_index + 1);
-         string_length = string_index;
+         result_string_pointer = malloc(max_string_size + 1);
+         string_length = max_string_size;
       }
       if (result_string_pointer != NULL) {
-         unsigned char index = string_length - string_index;
+         unsigned char index = string_length - max_string_size;
          *(result_string_pointer + index) = result_character + 48;
       }
 
       remaining -= result_character * divider;
+      divider /= 10;
+      max_string_size--;
    }
    result_string_pointer[string_length] = '\0';
    return result_string_pointer;

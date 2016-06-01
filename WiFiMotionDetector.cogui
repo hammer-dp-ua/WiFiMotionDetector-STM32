@@ -14,81 +14,31 @@
 <part id="1"/>
 <part id="2"/>
 <part id="3"/>
-<part id="4"/>
-<part id="5"/>
-<part id="6"/>
-<part id="7"/>
-<part id="8"/>
-<part id="9"/>
-<part id="10"/>
-<part id="11"/>
-<part id="12"/>
-<part id="13"/>
 </presentation>
 </folder>
 </info>
 </editorArea>
-<editor activePart="true" focus="true" id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" partName="main.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" title="main.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" workbook="DefaultEditorWorkbook">
+<editor id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" partName="main.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" title="main.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/main.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="44" selectionOffset="38045" selectionTopPixel="14345"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_gpio.c" partName="stm32f0xx_gpio.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_gpio.c" title="stm32f0xx_gpio.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_gpio.c" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_gpio.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="22" selectionOffset="13267" selectionTopPixel="5966"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_gpio.h" partName="stm32f0xx_gpio.h" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx_gpio.h" title="stm32f0xx_gpio.h" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx_gpio.h" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/components/stm32f0xx_gpio.h"/>
-<editorState selectionHorizontalPixel="0" selectionLength="16" selectionOffset="3551" selectionTopPixel="1843"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="51233" selectionTopPixel="21546"/>
 </editor>
 <editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx.h" partName="stm32f0xx.h" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx.h" title="stm32f0xx.h" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx.h" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/components/stm32f0xx.h"/>
-<editorState selectionHorizontalPixel="0" selectionLength="7" selectionOffset="9327" selectionTopPixel="3895"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="45215" selectionTopPixel="11932"/>
 </editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_exti.c" partName="stm32f0xx_exti.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_exti.c" title="stm32f0xx_exti.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_exti.c" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_exti.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="16" selectionOffset="10007" selectionTopPixel="4680"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_syscfg.c" partName="stm32f0xx_syscfg.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_syscfg.c" title="stm32f0xx_syscfg.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_syscfg.c" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_syscfg.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="6" selectionOffset="11504" selectionTopPixel="4579"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_misc.c" partName="stm32f0xx_misc.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_misc.c" title="stm32f0xx_misc.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_misc.c" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_misc.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="23" selectionOffset="5583" selectionTopPixel="2286"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_conf.h" partName="stm32f0xx_conf.h" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_conf.h" title="stm32f0xx_conf.h" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_conf.h" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_conf.h"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="1857" selectionTopPixel="399"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_exti.h" partName="stm32f0xx_exti.h" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx_exti.h" title="stm32f0xx_exti.h" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx_exti.h" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/components/stm32f0xx_exti.h"/>
-<editorState selectionHorizontalPixel="0" selectionLength="12" selectionOffset="2812" selectionTopPixel="1026"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="core_cm0.h" partName="core_cm0.h" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/core_cm0.h" title="core_cm0.h" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/core_cm0.h" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/components/core_cm0.h"/>
-<editorState selectionHorizontalPixel="0" selectionLength="16" selectionOffset="29145" selectionTopPixel="10450"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_usart.c" partName="stm32f0xx_usart.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_usart.c" title="stm32f0xx_usart.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_usart.c" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_usart.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="15" selectionOffset="89105" selectionTopPixel="37867"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_dma.c" partName="stm32f0xx_dma.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_dma.c" title="stm32f0xx_dma.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_dma.c" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_dma.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="22" selectionOffset="19541" selectionTopPixel="7809"/>
-</editor>
-<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_dbgmcu.c" partName="stm32f0xx_dbgmcu.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_dbgmcu.c" title="stm32f0xx_dbgmcu.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_dbgmcu.c" workbook="DefaultEditorWorkbook">
+<editor activePart="true" focus="true" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_dbgmcu.c" partName="stm32f0xx_dbgmcu.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_dbgmcu.c" title="stm32f0xx_dbgmcu.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_dbgmcu.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_dbgmcu.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="23" selectionOffset="5853" selectionTopPixel="3255"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="6096" selectionTopPixel="2698"/>
 </editor>
-<editor id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.s" partName="startup_stm32f0xx.s" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/startup_stm32f0xx.s" title="startup_stm32f0xx.s" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/startup_stm32f0xx.s" workbook="DefaultEditorWorkbook">
-<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/components/startup_stm32f0xx.s"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="4266" selectionTopPixel="2508"/>
+<editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_dbgmcu.h" partName="stm32f0xx_dbgmcu.h" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx_dbgmcu.h" title="stm32f0xx_dbgmcu.h" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/components/stm32f0xx_dbgmcu.h" workbook="DefaultEditorWorkbook">
+<input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/components/stm32f0xx_dbgmcu.h"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="2638" selectionTopPixel="950"/>
 </editor>
 </editors>
 <views>
 <view id="org.eclipse.debug.ui.ExpressionView" partName="Expressions">
 <viewState>
-<ExpressionKeySet ExpKeys="usart_data_received_buffer_g,piped_tasks_to_send_g,request,"/>
+<ExpressionKeySet ExpKeys="usart_data_received_buffer_g,piped_tasks_to_send_g,parameters,string,"/>
 </viewState>
 </view>
 <view id="org.coocox.builder.ui.views.ProjectView" partName="Project">
@@ -98,7 +48,7 @@
 <element path="/WiFiMotionDetector/components"/>
 </expanded>
 <selection>
-<element path="/WiFiMotionDetector/stm32f0xx_conf.h"/>
+<element path="/WiFiMotionDetector/components/stm32f0xx_dbgmcu.h"/>
 </selection>
 </viewState>
 </view>
@@ -113,19 +63,16 @@
 </view>
 <view id="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser" partName="Memory Browser">
 <viewState>
-<MemoryBroser ComboItemsValue="0x20000c10;0x08002d70;" FocuseTabIndex="0" TabsValue="" TextValue="0x20000c10" horizontalPosition="0" verticalPosition="0"/>
+<MemoryBroser ComboItemsValue="0x40015808;0x40015800;" FocuseTabIndex="0" TabsValue="0x40015800;" TextValue="0x40015800" horizontalPosition="0" verticalPosition="0"/>
 </viewState>
 </view>
 <view id="org.coocox.coassistant.view.CoAssistantView_debug" partName="Peripherals">
-<viewState horizontalPosition="0" verticalPosition="19">
+<viewState horizontalPosition="0" verticalPosition="0">
 <selection>
-<element name="DMA"/>
+<element name="DBGMCU"/>
 </selection>
-<registerValues baseAddress="Base Address: 0x40020000" description="Description:  DMA controller"/>
+<registerValues baseAddress="Base Address: 0x40015800" description="Description:  Debug support"/>
 </viewState>
-</view>
-<view id="org.eclipse.cdt.dsf.debug.ui.disassembly.view" partName="Disassembly">
-<viewState disassembly.syncActiveContext="true" disassembly.trackExpression="false"/>
 </view>
 <view id="org.eclipse.debug.ui.VariableView" partName="Variables">
 <viewState/>
@@ -257,7 +204,6 @@
 <view id="org.coocox.coassistant.view.CoAssistantView_debug"/>
 <view id="org.eclipse.debug.ui.ExpressionView"/>
 <view id="org.eclipse.debug.ui.VariableView"/>
-<view id="org.eclipse.cdt.dsf.debug.ui.disassembly.view"/>
 <fastViewBars>
 <fastViewBar fastViewLocation="16384" id="org.eclipse.ui.internal.ViewStack@c5d83e" orientation="512" selectedTabId="org.coocox.builder.ui.views.ProjectView" style="0">
 <fastViews>
@@ -309,18 +255,17 @@
 </folder>
 </info>
 <info folder="true" part="org.eclipse.ui.internal.ViewStack@1916de5" ratio="0.62274176" ratioLeft="1172" ratioRight="710" relationship="2" relative="org.eclipse.ui.internal.ViewStack@c5d83e">
-<folder activePageID="org.eclipse.debug.ui.ExpressionView" appearance="2" expanded="2">
+<folder activePageID="org.coocox.coassistant.view.CoAssistantView_debug" appearance="2" expanded="2">
 <page content="org.coocox.coassistant.view.CoAssistantView_debug" label="Peripherals"/>
 <page content="org.eclipse.debug.ui.ExpressionView" label="Expressions"/>
 <page content="org.eclipse.debug.ui.VariableView" label="Variables"/>
-<page content="org.eclipse.cdt.dsf.debug.ui.disassembly.view" label="Disassembly"/>
+<page content="org.eclipse.cdt.dsf.debug.ui.disassembly.view" label="LabelNotFound"/>
 <page content="org.eclipse.ui.views.ContentOutline" label="LabelNotFound"/>
 <page content="org.eclipse.debug.ui.RegisterView" label="LabelNotFound"/>
 <presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
 <part id="0"/>
 <part id="1"/>
 <part id="2"/>
-<part id="3"/>
 </presentation>
 </folder>
 </info>
@@ -334,142 +279,158 @@
 <editors>
 <editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/main.c"/>
 <editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/stm32f0xx_dbgmcu.c"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" path="/WiFiMotionDetector/components/startup_stm32f0xx.s"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/components/stm32f0xx.h"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/components/stm32f0xx_dbgmcu.h"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/components/stm32f0xx_exti.h"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/components/core_cm0.h"/>
+<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/stm32f0xx_conf.h"/>
 </editors>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="61437" y="15"/>
+<position info="not_deleted" x="59754" y="0"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="61536" y="7"/>
+<position info="not_deleted" x="15442" y="0"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="37997" y="0"/>
+<position info="not_deleted" x="60350" y="0"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="38661" y="0"/>
+<position info="not_deleted" x="59754" y="0"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15329" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15539" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="37911" y="4"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15329" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15329" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="57821" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16065" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27825" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="26099" y="52"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="26169" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="25147" y="33"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="25368" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="9079" y="4"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="9099" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27012" y="31"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27361" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15329" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16008" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15587" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="53284" y="0"/>
+<position info="not_deleted" x="51198" y="11"/>
 </item>
 <item historyLabel="stm32f0xx_dbgmcu.c" index="1">
-<position info="not_deleted" x="5229" y="16"/>
+<position info="not_deleted" x="5853" y="23"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="9327" y="7"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="72773" y="14"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="50374" y="0"/>
+<position info="not_deleted" x="15442" y="0"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15329" y="0"/>
+<position info="not_deleted" x="15465" y="0"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="20833" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16997" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="50374" y="0"/>
-</item>
-<item historyLabel="startup_stm32f0xx.s" index="2">
-<position info="not_deleted" x="0" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15329" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15440" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16065" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="50340" y="0"/>
+<position info="not_deleted" x="51234" y="0"/>
 </item>
 <item historyLabel="stm32f0xx_dbgmcu.c" index="1">
-<position info="not_deleted" x="5308" y="16"/>
+<position info="not_deleted" x="4455" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="72773" y="14"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.h" index="3">
+<position info="not_deleted" x="2638" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="229776" y="28"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="50378" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15329" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15539" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="50339" y="0"/>
+<position info="not_deleted" x="51230" y="0"/>
 </item>
 <item historyLabel="stm32f0xx_dbgmcu.c" index="1">
 <position info="not_deleted" x="5853" y="23"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="50339" y="0"/>
+<position info="not_deleted" x="51230" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="229776" y="28"/>
+</item>
+<item historyLabel="stm32f0xx_exti.h" index="4">
+<position info="not_deleted" x="2812" y="12"/>
+</item>
+<item historyLabel="core_cm0.h" index="5">
+<position info="not_deleted" x="29145" y="16"/>
+</item>
+<item historyLabel="stm32f0xx_exti.h" index="4">
+<position info="not_deleted" x="2812" y="12"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="229776" y="28"/>
+</item>
+<item historyLabel="stm32f0xx_conf.h" index="6">
+<position info="not_deleted" x="1857" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="229776" y="28"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6112" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="47092" y="6"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="38037" y="0"/>
+<position info="not_deleted" x="51230" y="0"/>
 </item>
 <item historyLabel="main.c" index="0">
-<position info="not_deleted" x="61437" y="15"/>
+<position info="not_deleted" x="51234" y="0"/>
 </item>
-<item active="true" historyLabel="main.c" index="0">
-<position info="not_deleted" x="61727" y="0"/>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="5853" y="23"/>
+</item>
+<item historyLabel="main.c" index="0">
+<position info="not_deleted" x="51253" y="0"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.h" index="3">
+<position info="not_deleted" x="2638" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="229776" y="28"/>
+</item>
+<item historyLabel="main.c" index="0">
+<position info="not_deleted" x="51253" y="0"/>
+</item>
+<item historyLabel="main.c" index="0">
+<position info="not_deleted" x="15442" y="0"/>
+</item>
+<item historyLabel="main.c" index="0">
+<position info="not_deleted" x="51229" y="0"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="5853" y="23"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6098" y="0"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6096" y="0"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6112" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="47092" y="6"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6166" y="6"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="47092" y="6"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6115" y="0"/>
+</item>
+<item historyLabel="stm32f0xx.h" index="2">
+<position info="not_deleted" x="45215" y="0"/>
+</item>
+<item historyLabel="main.c" index="0">
+<position info="not_deleted" x="51233" y="0"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="5853" y="23"/>
+</item>
+<item historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6105" y="0"/>
+</item>
+<item active="true" historyLabel="stm32f0xx_dbgmcu.c" index="1">
+<position info="not_deleted" x="6154" y="37"/>
 </item>
 </navigationHistory>
 <input factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/" type="8"/>
@@ -478,6 +439,9 @@
 <actionBarAdvisor/>
 </window>
 <mruList>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_dbgmcu.h" tooltip="WiFiMotionDetector/components/stm32f0xx_dbgmcu.h">
+<persistable path="/WiFiMotionDetector/components/stm32f0xx_dbgmcu.h"/>
+</file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.s" tooltip="WiFiMotionDetector/components/startup_stm32f0xx.s">
 <persistable path="/WiFiMotionDetector/components/startup_stm32f0xx.s"/>
 </file>
