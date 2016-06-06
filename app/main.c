@@ -57,7 +57,7 @@
 #define SEND_ALARM_FLAG 262144
 #define SEND_ALARM_REQUEST_FLAG 524288
 
-#define USART_DATA_RECEIVED_BUFFER_SIZE 500
+#define USART_DATA_RECEIVED_BUFFER_SIZE 1000
 #define PIPED_REQUEST_COMMANDS_TO_SEND_SIZE 3
 #define PIPED_REQUEST_CIPSTART_COMMAND_INDEX 0
 #define PIPED_REQUEST_CIPSEND_COMMAND_INDEX 1
@@ -78,6 +78,7 @@
 #define TIMER6_30S 300
 #define TIMER6_60S 600
 #define TIMER6_2MIN 1200
+#define TIMER6_3MIN 1800
 #define TIMER6_10MIN 6000
 
 #define EXECUTE_FUNCTION 1
@@ -125,8 +126,6 @@ char ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE[] __attribute__ ((section(".t
 char ESP8226_REQUEST_GET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF?\r\n";
 char ESP8226_RESPONSE_CURRENT_OWN_IP_ADDRESS_PREFIX[] __attribute__ ((section(".text.const"))) = "+CIPSTA_DEF:ip:";
 char ESP8226_REQUEST_SET_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "AT+CIPSTA_DEF=\"<1>\"\r\n";
-char ESP8226_REQUEST_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) =
-      "GET /server/esp8266/test HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
 char ESP8226_REQUEST_SEND_STATUS_INFO_AND_GET_SERVER_AVAILABILITY[] __attribute__ ((section(".text.const"))) =
       "POST /server/esp8266/statusInfo HTTP/1.1\r\nContent-Length: <1>\r\nHost: <2>\r\nUser-Agent: ESP8266\r\nContent-Type: application/json\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n<3>\r\n";
 char DEBUG_STATUS_JSON[] __attribute__ ((section(".text.const"))) =
@@ -139,6 +138,9 @@ char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) =
 char ESP8226_RESPONSE_HTTP_STATUS_200_OK[] __attribute__ ((section(".text.const"))) = "200 OK";
 char SERVER_STATUS_INCLUDE_DEBUG_INFO[] __attribute__ ((section(".text.const"))) = "\"includeDebugInfo\":true";
 char JSON_OBJECT_PREFIX[] __attribute__ ((section(".text.const"))) = "{";
+char RESPONSE_CLOSED_BY_TOMCAT[] __attribute__ ((section(".text.const"))) = "\r\n+IPD,5:0\r\n\r\nCLOSED\r\n";
+char RESPONSE_CLOSED_BY_TOMCAT_PREFIX[] __attribute__ ((section(".text.const"))) = "\r\n+IPD,5:0";
+char RESPONSE_CLOSED_BY_TOMCAT_SUFFIX[] __attribute__ ((section(".text.const"))) = "CLOSED\r\n";
 
 char *usart_data_to_be_transmitted_buffer_g = NULL;
 char *received_usart_error_data_g = NULL;
@@ -175,6 +177,7 @@ void Pins_Config();
 void TIMER3_Confing();
 void TIMER6_Confing();
 void EXTERNAL_Interrupt_Config();
+void reset_device_state();
 void beep_and_schedule_alarm(unsigned char *beeper_counter);
 void turn_beeper_on();
 void turn_beeper_off();
@@ -198,6 +201,7 @@ unsigned short get_received_data_length();
 unsigned char is_received_data_length_equal(unsigned short length);
 void *set_string_parameters(char string[], char *parameters[]);
 unsigned short get_string_length(char string[]);
+unsigned char is_string_starts_with(char long_string[], char short_string[]);
 unsigned int get_current_piped_task_to_send();
 void delete_current_piped_task();
 void add_piped_task_to_send_into_tail(unsigned int task);
@@ -371,7 +375,12 @@ int main() {
                usart_data_to_be_transmitted_buffer_g = NULL;
             }
 
-            set_appropriate_successfully_recieved_flag();
+            if (is_string_starts_with(usart_data_received_buffer_g, RESPONSE_CLOSED_BY_TOMCAT_PREFIX)
+                  || is_string_starts_with(usart_data_received_buffer_g, RESPONSE_CLOSED_BY_TOMCAT_SUFFIX)) {
+               is_string_starts_with(usart_data_received_buffer_g, RESPONSE_CLOSED_BY_TOMCAT_PREFIX);
+            } else {
+               set_appropriate_successfully_recieved_flag();
+            }
          } else if (send_usart_data_function_g != NULL && send_usart_data_passed_time_sec >= send_usart_data_timout_sec_g) {
             if (usart_data_to_be_transmitted_buffer_g != NULL) {
                free(usart_data_to_be_transmitted_buffer_g);
@@ -381,7 +390,7 @@ int main() {
             send_usart_data_function_g();
          }
 
-         if (successfully_received_flags_g) {
+        if (successfully_received_flags_g) {
             if (read_flag_state(&successfully_received_flags_g, DISABLE_ECHO_FLAG)) {
                on_successfully_receive_general_actions(DISABLE_ECHO_FLAG);
             }
@@ -471,7 +480,7 @@ int main() {
                   }
 
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_SET);
-                  checking_connection_status_and_server_availability_timer_g = TIMER6_30S;
+                  checking_connection_status_and_server_availability_timer_g = TIMER6_60S;
                } else {
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
                }
@@ -516,25 +525,10 @@ int main() {
          }
 
          if (send_usart_data_errors_counter_g >= 10 || is_piped_tasks_scheduler_full()) {
-            unsigned char is_alarm_occured = is_piped_task_to_send_scheduled(SEND_ALARM_FLAG);
-            delete_all_piped_tasks();
-            clear_piped_request_commands_to_send();
-            on_response_g = NULL;
-            send_usart_data_function_g = NULL;
-
-            send_usart_data_errors_counter_g = 0;
-            successfully_received_flags_g = 0;
-            sent_flag_g = 0;
-
-            if (is_alarm_occured) {
-               add_piped_task_to_send_into_tail(SEND_ALARM_FLAG);
-            }
-
-            GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
+            reset_device_state();
          }
 
          beep_and_schedule_alarm(&beeper_counter);
-         //disable_esp8266();
       } else if (esp8266_disabled_counter_g >= TIMER6_1S) {
          esp8266_disabled_counter_g = 0;
          enable_esp8266();
@@ -542,6 +536,26 @@ int main() {
 
       IWDG_ReloadCounter();
    }
+}
+
+void reset_device_state() {
+   unsigned char is_alarm_occured = is_piped_task_to_send_scheduled(SEND_ALARM_FLAG);
+   delete_all_piped_tasks();
+   clear_piped_request_commands_to_send();
+   clear_usart_data_received_buffer();
+   on_response_g = NULL;
+   send_usart_data_function_g = NULL;
+
+   send_usart_data_errors_counter_g = 0;
+   successfully_received_flags_g = 0;
+   sent_flag_g = 0;
+
+   if (is_alarm_occured) {
+      add_piped_task_to_send_into_tail(SEND_ALARM_FLAG);
+   }
+
+   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
+   //disable_esp8266();
 }
 
 void beep_and_schedule_alarm(unsigned char *beeper_counter) {
@@ -623,7 +637,7 @@ void beep_and_schedule_alarm(unsigned char *beeper_counter) {
 
 void check_connection_status_and_server_availability(unsigned short *counter) {
    if (*counter == 0 && is_piped_tasks_scheduler_empty()) {
-      *counter = TIMER6_30S;
+      *counter = TIMER6_60S;
       add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
       add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
    }
@@ -1136,6 +1150,8 @@ void *get_received_usart_error_data() {
          received_char = 'n';
       } else if (received_char == '\"') {
          received_char = '\'';
+      } else if (received_char < ' ') {
+         received_char += 65; // Starts from 'A'
       }
       *(result_string + i) = received_char;
    }
@@ -1543,6 +1559,18 @@ unsigned short get_string_length(char string[]) {
    for (char *string_pointer = string; *string_pointer != '\0'; string_pointer++, length++) {
    }
    return length;
+}
+
+unsigned char is_string_starts_with(char long_string[], char short_string[]) {
+   unsigned char starts_with = 1;
+
+   for (unsigned short i = 0; short_string[i] != '\0'; i++) {
+      if (long_string[i] == '\0' || long_string[i] != short_string[i]) {
+         starts_with = 0;
+         break;
+      }
+   }
+   return starts_with;
 }
 
 /**
