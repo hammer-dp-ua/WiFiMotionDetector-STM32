@@ -70,7 +70,9 @@
 #define TIMER3_PERIOD_MS 0.13f
 #define TIMER3_PERIOD_SEC (TIMER3_PERIOD_MS / 1000)
 #define TIMER3_100MS (unsigned short)(100 / TIMER3_PERIOD_MS)
+#define TIMER6_100MS 1
 #define TIMER6_200MS 2
+#define TIMER6_500MS 5
 #define TIMER6_1S 10
 #define TIMER6_2S 20
 #define TIMER6_5S 50
@@ -88,7 +90,7 @@
 
 unsigned int piped_tasks_to_send_g[PIPED_TASKS_TO_SEND_SIZE];
 unsigned int piped_tasks_history_g[PIPED_TASKS_HISTORY_SIZE];
-char *piped_request_commands_to_send_g[PIPED_REQUEST_COMMANDS_TO_SEND_SIZE]; // AT+CIPSTART="TCP","address",port; AT+CIPSEND=bytes_to_send; request
+char *piped_request_commands_to_send_g[PIPED_REQUEST_COMMANDS_TO_SEND_SIZE]; // AT+CIPSTART="TCP","address",port; AT+CIPSEND=bytes_to_send; a request
 unsigned int sent_flag_g;
 unsigned int successfully_received_flags_g;
 unsigned int general_flags_g;
@@ -132,7 +134,7 @@ char DEBUG_STATUS_JSON[] __attribute__ ((section(".text.const"))) =
       "{\"gain\":\"<1>\",\"debugInfoIncluded\":<2>,\"errors\":\"<3>\",\"usartOverrunErrors\":\"<4>\",\"usartIdleLineDetections\":\"<5>\",\"usartNoiseDetection\":\"<6>\",\"usartFramingErrors\":\"<7>\",\"lastErrorTask\":\"<8>\",\"usartData\":\"<9>\"}";
 char STATUS_JSON[] __attribute__ ((section(".text.const"))) =
       "{\"gain\":\"<1>\",\"debugInfoIncluded\":<2>}";
-char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) = "{\"statusCode\":\"OK\"}";
+char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) = "\"statusCode\":\"OK\"";
 char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) =
       "GET /server/esp8266/alarm HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
 char ESP8226_RESPONSE_HTTP_STATUS_200_OK[] __attribute__ ((section(".text.const"))) = "200 OK";
@@ -216,7 +218,6 @@ void connect_to_server();
 void resend_usart_get_request(unsigned int final_task);
 void set_bytes_amount_to_send();
 void send_request(unsigned int sent_flag_to_set);
-void action_on_response();
 void get_current_default_wifi_mode();
 void set_default_wifi_mode();
 void enable_esp8266();
@@ -480,7 +481,7 @@ int main() {
                   }
 
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_SET);
-                  checking_connection_status_and_server_availability_timer_g = TIMER6_60S;
+                  checking_connection_status_and_server_availability_timer_g = TIMER6_30S;
                } else {
                   GPIO_WriteBit(SERVER_AVAILABILITI_LED_PORT, SERVER_AVAILABILITI_LED_PIN, Bit_RESET);
                }
@@ -525,7 +526,8 @@ int main() {
          }
 
          if (send_usart_data_errors_counter_g >= 10 || is_piped_tasks_scheduler_full()) {
-            reset_device_state();
+            //reset_device_state();
+            while(1);
          }
 
          beep_and_schedule_alarm(&beeper_counter);
@@ -545,6 +547,11 @@ void reset_device_state() {
    clear_usart_data_received_buffer();
    on_response_g = NULL;
    send_usart_data_function_g = NULL;
+
+   if (received_usart_error_data_g != NULL) {
+      free(received_usart_error_data_g);
+      received_usart_error_data_g = NULL;
+   }
 
    send_usart_data_errors_counter_g = 0;
    successfully_received_flags_g = 0;
@@ -589,11 +596,19 @@ void beep_and_schedule_alarm(unsigned char *beeper_counter) {
             turn_beeper_on();
             *beeper_counter = *beeper_counter + 1;
             break;
+         case 4:
+            turn_beeper_off();
+            *beeper_counter = *beeper_counter + 1;
+            break;
+         case 5:
+            turn_beeper_on();
+            *beeper_counter = *beeper_counter + 1;
+            break;
          default:
             turn_beeper_off();
             *beeper_counter = 0;
             beeper_period_timer_g = 0;
-            beeper_alarm_prior_to_response_period_timer_g = TIMER6_1S;
+            beeper_alarm_prior_to_response_period_timer_g = TIMER6_500MS;
             reset_flag(&general_flags_g, BEEPER_SIGNAL_ALARM_FLAG);
             break;
       }
@@ -637,7 +652,7 @@ void beep_and_schedule_alarm(unsigned char *beeper_counter) {
 
 void check_connection_status_and_server_availability(unsigned short *counter) {
    if (*counter == 0 && is_piped_tasks_scheduler_empty()) {
-      *counter = TIMER6_60S;
+      *counter = TIMER6_30S;
       add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
       add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
    }
@@ -781,19 +796,19 @@ void set_appropriate_successfully_recieved_flag() {
       set_flag(&successfully_received_flags_g, CLOSE_CONNECTION_FLAG);
    }
    if (read_flag_state(&sent_flag_g, GET_SERVER_AVAILABILITY_REQUEST_FLAG)) {
-      if (is_usart_response_contains_element(ESP8226_RESPONSE_SUCCSESSFULLY_SENT) && !is_usart_response_contains_element(JSON_OBJECT_PREFIX)) {
+      if (is_usart_response_contains_element(ESP8226_RESPONSE_SUCCSESSFULLY_SENT) && !is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
          // Sometimes only "SEND OK" is received. Another data will be received later
          clear_usart_data_received_buffer();
       } else {
-         set_appropriate_successfully_recieved_flag_general_action(GET_SERVER_AVAILABILITY_REQUEST_FLAG, ESP8226_RESPONSE_PREFIX);
+         set_appropriate_successfully_recieved_flag_general_action(GET_SERVER_AVAILABILITY_REQUEST_FLAG, ESP8226_RESPONSE_OK_STATUS_CODE);
       }
    }
    if (read_flag_state(&sent_flag_g, SEND_ALARM_REQUEST_FLAG)) {
-      if (is_usart_response_contains_element(ESP8226_RESPONSE_SUCCSESSFULLY_SENT) && !is_usart_response_contains_element(JSON_OBJECT_PREFIX)) {
+      if (is_usart_response_contains_element(ESP8226_RESPONSE_SUCCSESSFULLY_SENT) && !is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
          // Sometimes only "SEND OK" is received. Another data will be received later
          clear_usart_data_received_buffer();
       } else {
-         set_appropriate_successfully_recieved_flag_general_action(SEND_ALARM_REQUEST_FLAG, ESP8226_RESPONSE_PREFIX);
+         set_appropriate_successfully_recieved_flag_general_action(SEND_ALARM_REQUEST_FLAG, ESP8226_RESPONSE_OK_STATUS_CODE);
       }
    }
 }
@@ -901,10 +916,6 @@ void get_current_default_wifi_mode() {
 void set_default_wifi_mode() {
    send_usard_data(ESP8226_REQUEST_SET_DEFAULT_STATION_WIFI_MODE);
    set_flag(&sent_flag_g, SET_DEFAULT_STATION_WIFI_MODE_FLAG);
-}
-
-void action_on_response() {
-   clear_piped_request_commands_to_send();
 }
 
 /**
