@@ -18,9 +18,13 @@
 #define SERVER_AVAILABILITI_LED_PORT GPIOA
 #define MOTION_SENSOR_LED_PIN GPIO_Pin_4
 #define MOTION_SENSOR_LED_PORT GPIOA
-#define MOTION_SENSOR_INPUT_PIN GPIO_Pin_3
-#define MOTION_SENSOR_EXTI_PIN_SOURCE EXTI_PinSource3
-#define MOTION_SENSOR_INPUT_PORT GPIOA
+#define MOTION_SENSOR_INPUT_PIN GPIO_Pin_0
+#define MOTION_SENSOR_INPUT_PIN_SOURCE GPIO_PinSource0
+#define MOTION_SENSOR_INPUT_PORT GPIOB
+#define MOTION_SENSOR_EXTI_PIN_SOURCE EXTI_PinSource0
+#define MOTION_SENSOR_EXTI_PORT_SOURCE EXTI_PortSourceGPIOB
+#define MOTION_SENSOR_EXTI_LINE EXTI_Line0
+#define MOTION_SENSOR_NVIC_IRQChannel EXTI0_1_IRQn
 #define ESP8266_CONTROL_PIN GPIO_Pin_12
 #define ESP8266_CONTROL_PORT GPIOA
 #define BEEPER_PIN GPIO_Pin_7
@@ -75,6 +79,7 @@
 #define TIMER6_500MS 5
 #define TIMER6_1S 10
 #define TIMER6_2S 20
+#define TIMER6_3S 30
 #define TIMER6_5S 50
 #define TIMER6_10S 100
 #define TIMER6_30S 300
@@ -167,6 +172,7 @@ volatile unsigned short visible_network_list_timer_g = TIMER6_10MIN;
 volatile unsigned short beeper_inactive_timer_g;
 volatile unsigned char beeper_period_timer_g;
 volatile unsigned char beeper_alarm_prior_to_response_period_timer_g;
+volatile unsigned char inactive_alarm_trigger_timer_g;
 
 volatile unsigned short usart_overrun_errors_counter_g;
 volatile unsigned short usart_idle_line_detection_counter_g;
@@ -282,6 +288,9 @@ void TIM6_DAC_IRQHandler() {
    if (beeper_alarm_prior_to_response_period_timer_g) {
       beeper_alarm_prior_to_response_period_timer_g--;
    }
+   if (inactive_alarm_trigger_timer_g) {
+      inactive_alarm_trigger_timer_g--;
+   }
 }
 
 void TIM3_IRQHandler() {
@@ -298,17 +307,20 @@ void TIM3_IRQHandler() {
    network_searching_status_led_counter_g++;
 }
 
-void EXTI2_3_IRQHandler() {
-   if (EXTI_GetITStatus(EXTI_Line3)) {
-      EXTI_ClearITPendingBit(EXTI_Line3);
+void EXTI0_1_IRQHandler() {
+   if (EXTI_GetITStatus(MOTION_SENSOR_EXTI_LINE)) {
+      EXTI_ClearITPendingBit(MOTION_SENSOR_EXTI_LINE);
 
-      if (GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN)) {
-         GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_SET);
+      if (!inactive_alarm_trigger_timer_g) {
+         if (!GPIO_ReadInputDataBit(MOTION_SENSOR_INPUT_PORT, MOTION_SENSOR_INPUT_PIN)) {
+            //GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_SET);
 
-         set_flag(&general_flags_g, ALARM_FLAG);
-      } else {
-         GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_RESET);
+            set_flag(&general_flags_g, ALARM_FLAG);
+         } else {
+            //GPIO_WriteBit(MOTION_SENSOR_LED_PORT, MOTION_SENSOR_LED_PIN, Bit_RESET);
+         }
       }
+      inactive_alarm_trigger_timer_g = TIMER6_3S;
    }
 }
 
@@ -1283,24 +1295,24 @@ void Pins_Config() {
    gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
    GPIO_Init(GPIOA, &gpioInitType);
 
-   // Motion sensor input
-   gpioInitType.GPIO_PuPd = GPIO_PuPd_DOWN;
-   gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN;
-   GPIO_Init(MOTION_SENSOR_INPUT_PORT, &gpioInitType);
-
    // For USART1
    gpioInitType.GPIO_Pin = (1<<GPIO_PinSource9) | (1<<GPIO_PinSource10);
    gpioInitType.GPIO_PuPd = GPIO_PuPd_NOPULL;
    gpioInitType.GPIO_Mode = GPIO_Mode_AF;
-   gpioInitType.GPIO_OType = GPIO_OType_PP;
+   gpioInitType.GPIO_OType = GPIO_OType_OD;
    GPIO_Init(GPIOA, &gpioInitType);
    GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_1);
    GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_1);
 
    gpioInitType.GPIO_Pin = GPIO_Pin_All;
-   gpioInitType.GPIO_Mode = GPIO_Mode_IN;
    gpioInitType.GPIO_PuPd = GPIO_PuPd_UP;
+   gpioInitType.GPIO_Mode = GPIO_Mode_IN;
    GPIO_Init(GPIOB, &gpioInitType);
+
+   // Motion sensor input
+   gpioInitType.GPIO_PuPd = GPIO_PuPd_DOWN;
+   gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN_SOURCE;
+   GPIO_Init(MOTION_SENSOR_INPUT_PORT, &gpioInitType);
 
    // PA1 LED
    gpioInitType.GPIO_Pin = NETWORK_STATUS_LED_PIN;
@@ -1319,8 +1331,8 @@ void Pins_Config() {
    GPIO_Init(BEEPER_PORT, &gpioInitType);
 
    // MOTION SENSOR LED
-   gpioInitType.GPIO_Pin = MOTION_SENSOR_LED_PIN;
-   GPIO_Init(MOTION_SENSOR_LED_PORT, &gpioInitType);
+   //gpioInitType.GPIO_Pin = MOTION_SENSOR_LED_PIN;
+   //GPIO_Init(MOTION_SENSOR_LED_PORT, &gpioInitType);
 
    // ESP8266 enable/disable
    gpioInitType.GPIO_Pin = ESP8266_CONTROL_PIN;
@@ -1422,17 +1434,17 @@ void USART_Config() {
 }
 
 void EXTERNAL_Interrupt_Config() {
-   SYSCFG_EXTILineConfig(EXTI_PortSourceGPIOA, MOTION_SENSOR_EXTI_PIN_SOURCE);
+   SYSCFG_EXTILineConfig(MOTION_SENSOR_EXTI_PORT_SOURCE, MOTION_SENSOR_EXTI_PIN_SOURCE);
 
    EXTI_InitTypeDef EXTI_InitStructure;
-   EXTI_InitStructure.EXTI_Line = EXTI_Line3;
+   EXTI_InitStructure.EXTI_Line = MOTION_SENSOR_EXTI_LINE;
    EXTI_InitStructure.EXTI_Mode = EXTI_Mode_Interrupt;
    EXTI_InitStructure.EXTI_Trigger = EXTI_Trigger_Rising_Falling;
    EXTI_InitStructure.EXTI_LineCmd = ENABLE;
    EXTI_Init(&EXTI_InitStructure);
 
    NVIC_InitTypeDef NVIC_InitTypeInitStructure;
-   NVIC_InitTypeInitStructure.NVIC_IRQChannel = EXTI2_3_IRQn;
+   NVIC_InitTypeInitStructure.NVIC_IRQChannel = MOTION_SENSOR_NVIC_IRQChannel;
    NVIC_InitTypeInitStructure.NVIC_IRQChannelPriority = 3;
    NVIC_InitTypeInitStructure.NVIC_IRQChannelCmd = ENABLE;
    NVIC_Init(&NVIC_InitTypeInitStructure);
