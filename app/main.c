@@ -19,7 +19,6 @@
 #define MOTION_SENSOR_LED_PIN GPIO_Pin_4
 #define MOTION_SENSOR_LED_PORT GPIOA
 #define MOTION_SENSOR_INPUT_PIN GPIO_Pin_0
-#define MOTION_SENSOR_INPUT_PIN_SOURCE GPIO_PinSource0
 #define MOTION_SENSOR_INPUT_PORT GPIOB
 #define MOTION_SENSOR_EXTI_PIN_SOURCE EXTI_PinSource0
 #define MOTION_SENSOR_EXTI_PORT_SOURCE EXTI_PortSourceGPIOB
@@ -1311,7 +1310,7 @@ void Pins_Config() {
 
    // Motion sensor input
    gpioInitType.GPIO_PuPd = GPIO_PuPd_DOWN;
-   gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN_SOURCE;
+   gpioInitType.GPIO_Pin = MOTION_SENSOR_INPUT_PIN;
    GPIO_Init(MOTION_SENSOR_INPUT_PORT, &gpioInitType);
 
    // PA1 LED
@@ -1434,6 +1433,7 @@ void USART_Config() {
 }
 
 void EXTERNAL_Interrupt_Config() {
+   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
    SYSCFG_EXTILineConfig(MOTION_SENSOR_EXTI_PORT_SOURCE, MOTION_SENSOR_EXTI_PIN_SOURCE);
 
    EXTI_InitTypeDef EXTI_InitStructure;
@@ -1449,7 +1449,7 @@ void EXTERNAL_Interrupt_Config() {
    NVIC_InitTypeInitStructure.NVIC_IRQChannelCmd = ENABLE;
    NVIC_Init(&NVIC_InitTypeInitStructure);
 
-   RCC_APB2PeriphClockCmd(RCC_APB2Periph_SYSCFG, ENABLE);
+
 }
 
 void turn_beeper_on() {
