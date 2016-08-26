@@ -143,6 +143,7 @@ char ESP8226_RESPONSE_OK_STATUS_CODE[] __attribute__ ((section(".text.const"))) 
 char ESP8226_REQUEST_SEND_ALARM[] __attribute__ ((section(".text.const"))) =
       "GET /server/esp8266/alarm HTTP/1.1\r\nHost: <1>\r\nUser-Agent: ESP8266\r\nAccept: application/json\r\nConnection: keep-alive\r\n\r\n";
 char ESP8226_RESPONSE_HTTP_STATUS_200_OK[] __attribute__ ((section(".text.const"))) = "200 OK";
+char ESP8226_RESPONSE_HTTP_STATUS_400_BAD_REQUEST[] __attribute__ ((section(".text.const"))) = "HTTP/1.1 400 Bad Request";
 char SERVER_STATUS_INCLUDE_DEBUG_INFO[] __attribute__ ((section(".text.const"))) = "\"includeDebugInfo\":true";
 char JSON_OBJECT_PREFIX[] __attribute__ ((section(".text.const"))) = "{";
 char RESPONSE_CLOSED_BY_TOMCAT[] __attribute__ ((section(".text.const"))) = "\r\n+IPD,5:0\r\n\r\nCLOSED\r\n";
@@ -550,7 +551,7 @@ int main() {
             reset_device_state();
          }
          if (resets_occured_g >= 10) {
-            while(1);
+            NVIC_SystemReset();
          }
 
          beep_and_schedule_alarm(&beeper_counter);
@@ -823,7 +824,9 @@ void set_appropriate_successfully_recieved_flag() {
       set_flag(&successfully_received_flags_g, CLOSE_CONNECTION_FLAG);
    }
    if (read_flag(&sent_flag_g, GET_SERVER_AVAILABILITY_REQUEST_FLAG)) {
-      if (is_usart_response_contains_element(ESP8226_RESPONSE_SUCCSESSFULLY_SENT) && !is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
+      if (is_usart_response_contains_element(ESP8226_RESPONSE_HTTP_STATUS_400_BAD_REQUEST)) {
+         NVIC_SystemReset(); // Sometimes some error occured
+      } else if (is_usart_response_contains_element(ESP8226_RESPONSE_SUCCSESSFULLY_SENT) && !is_usart_response_contains_element(ESP8226_RESPONSE_OK_STATUS_CODE)) {
          // Sometimes only "SEND OK" is received. Another data will be received later
          clear_usart_data_received_buffer();
       } else {
