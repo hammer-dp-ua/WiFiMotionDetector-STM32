@@ -21,13 +21,14 @@
 <part id="8"/>
 <part id="9"/>
 <part id="10"/>
+<part id="11"/>
 </presentation>
 </folder>
 </info>
 </editorArea>
-<editor activePart="true" focus="true" id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" partName="main.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" title="main.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" workbook="DefaultEditorWorkbook">
+<editor id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" partName="main.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" title="main.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/main.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="38267" selectionTopPixel="14858"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="40794" selectionTopPixel="15371"/>
 </editor>
 <editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_usart.c" partName="stm32f0xx_usart.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_usart.c" title="stm32f0xx_usart.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_usart.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_usart.c"/>
@@ -73,7 +74,7 @@
 <views>
 <view id="org.eclipse.debug.ui.ExpressionView" partName="Expressions">
 <viewState>
-<ExpressionKeySet ExpKeys="usart_data_received_buffer_g,piped_tasks_to_send_g,result_string,request,received_usart_error_data,"/>
+<ExpressionKeySet ExpKeys="usart_data_received_buffer_g,is_usart_response_contains_element(ESP8226_RESPONSE_HTTP_STATUS_400_BAD_REQUEST),"/>
 </viewState>
 </view>
 <view id="org.coocox.builder.ui.views.ProjectView" partName="Project">
@@ -87,24 +88,15 @@
 </selection>
 </viewState>
 </view>
-<view id="org.eclipse.debug.ui.DebugView" partName="Debug">
-<viewState/>
-</view>
 <view id="org.coocox.component.ui.view.ComponentView" partName="Component View">
 <viewState/>
 </view>
 <view id="org.eclipse.ui.console.ConsoleView" partName="Console">
 <viewState/>
 </view>
-<view id="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser" partName="Memory Browser">
-<viewState>
-<MemoryBroser ComboItemsValue="0x20001348;0x20000c08;0x20000ee0;" FocuseTabIndex="0" TabsValue="" TextValue="0x20001348" horizontalPosition="0" verticalPosition="0"/>
-</viewState>
-</view>
 <view id="org.coocox.coassistant.view.CoAssistantView_debug" partName="Peripherals">
 <viewState horizontalPosition="0" verticalPosition="30">
-<selection>
-<element name="DBGMCU"/>
+<selection>&#x0A;<element name="DBGMCU"/>
 </selection>
 <registerValues baseAddress="Base Address: 0x40015800" description="Description:  Debug support"/>
 </viewState>
@@ -116,7 +108,7 @@
 <viewState/>
 </view>
 </views>
-<perspectives activePart="org.eclipse.cdt.ui.editor.CEditor" activePerspective="org.coocox.builder.perspective.CoBuilder">
+<perspectives activePart="org.view.ConfigureEditor" activePerspective="org.coocox.builder.perspective.CoBuilder">
 <perspective editorAreaTrimState="2" editorAreaVisible="1" fixed="0" version="0.016">
 <descriptor class="org.coocox.builder.ui.PerspectiveCoBuilder" id="org.coocox.builder.perspective.CoBuilder" label="CooCox CoBuilder"/>
 <alwaysOnActionSet id="org.coocox.welcome.ui.actionSet"/>
@@ -138,8 +130,8 @@
 <hide_menu_item_id id="org.coocox.codebugger.configuration.showMemoryBrowserAction"/>
 <hide_menu_item_id id="org.coocox.codebugger.configuration.showVariablesAction"/>
 <hide_menu_item_id id="org.coocox.builder.ui.openProjectExplorerAction"/>
-<hide_menu_item_id id="org.eclipse.debug.ui.commands.TerminateAndRelaunch"/>
 <hide_menu_item_id id="org.coocox.codebugger.trace.actions.ShowTraceControlAction"/>
+<hide_menu_item_id id="org.eclipse.debug.ui.commands.TerminateAndRelaunch"/>
 <hide_menu_item_id id="org.coocox.codebugger.configuration.showRegistersAction"/>
 <hide_toolbar_item_id id="org.eclipse.cdt.debug.internal.ui.actions.ToggleInstructionStepModeAction"/>
 <hide_toolbar_item_id id="org.eclipse.ui.edit.text.toggleShowSelectedElementOnly"/>
@@ -234,71 +226,51 @@
 <hide_toolbar_item_id id="org.eclipse.ui.edit.text.toggleShowSelectedElementOnly"/>
 <hide_toolbar_item_id id="org.coocox.builder.ui.build"/>
 <hide_toolbar_item_id id="org.coocox.welcome.ui.action.welcome"/>
-<hide_toolbar_item_id id="org.coocox.component.ui.ShowRepositoryAction"/>
 <hide_toolbar_item_id id="org.coocox.codebugger.configuration.coideProgramDownloadAction"/>
+<hide_toolbar_item_id id="org.coocox.component.ui.ShowRepositoryAction"/>
 <view id="org.coocox.coassistant.view.CoAssistantView_debug"/>
 <view id="org.eclipse.debug.ui.ExpressionView"/>
 <view id="org.eclipse.debug.ui.VariableView"/>
-<fastViewBars>
-<fastViewBar fastViewLocation="16384" id="org.eclipse.ui.internal.ViewStack@c5d83e" orientation="512" selectedTabId="org.coocox.builder.ui.views.ProjectView" style="0">
-<fastViews>
-<view id="org.coocox.builder.ui.views.ProjectView" ratio="0.29920423"/>
+<fastViewBars>&#x0A;<fastViewBar fastViewLocation="16384" id="org.eclipse.ui.internal.ViewStack@c5d83e" orientation="512" selectedTabId="org.coocox.builder.ui.views.ProjectView" style="0">&#x0A;<fastViews>&#x0A;<view id="org.coocox.builder.ui.views.ProjectView" ratio="0.29920423"/>
 </fastViews>
 </fastViewBar>
-<fastViewBar fastViewLocation="1024" id="org.eclipse.ui.internal.ViewStack@d86a23" orientation="256" selectedTabId="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser" style="0">
-<fastViews>
-<view id="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser" ratio="0.24369748"/>
+<fastViewBar fastViewLocation="1024" id="org.eclipse.ui.internal.ViewStack@d86a23" orientation="256" selectedTabId="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser" style="0">&#x0A;<fastViews>&#x0A;<view id="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser" ratio="0.24369748"/>
 </fastViews>
 </fastViewBar>
-<fastViewBar fastViewLocation="1024" id="org.eclipse.ui.internal.ViewStack@67f809" orientation="256" selectedTabId="org.eclipse.debug.ui.DebugView" style="0">
-<fastViews>
-<view id="org.eclipse.ui.console.ConsoleView" ratio="0.29621848"/>
+<fastViewBar fastViewLocation="1024" id="org.eclipse.ui.internal.ViewStack@67f809" orientation="256" selectedTabId="org.eclipse.debug.ui.DebugView" style="0">&#x0A;<fastViews>&#x0A;<view id="org.eclipse.ui.console.ConsoleView" ratio="0.29621848"/>
 <view id="org.eclipse.debug.ui.DebugView" ratio="0.29936975"/>
 </fastViews>
 </fastViewBar>
 </fastViewBars>
 <viewLayoutRec closeable="false" id="org.eclipse.debug.ui.DebugView"/>
-<layout>
-<mainWindow>
-<info folder="true" part="org.eclipse.ui.internal.ViewStack@c5d83e">
-<folder appearance="2" expanded="0">
-<page content="org.coocox.builder.ui.views.ProjectView" label="LabelNotFound"/>
+<layout>&#x0A;<mainWindow>&#x0A;<info folder="true" part="org.eclipse.ui.internal.ViewStack@c5d83e">&#x0A;<folder appearance="2" expanded="0">&#x0A;<page content="org.coocox.builder.ui.views.ProjectView" label="LabelNotFound"/>
 <presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory"/>
 </folder>
 </info>
-<info folder="true" part="stickyFolderRight" ratio="0.75" ratioLeft="1434" ratioRight="478" relationship="2" relative="org.eclipse.ui.internal.ViewStack@c5d83e">
-<folder appearance="2" expanded="2">
-<page content="org.eclipse.help.ui.HelpView" label="LabelNotFound"/>
+<info folder="true" part="stickyFolderRight" ratio="0.75" ratioLeft="1434" ratioRight="478" relationship="2" relative="org.eclipse.ui.internal.ViewStack@c5d83e">&#x0A;<folder appearance="2" expanded="2">&#x0A;<page content="org.eclipse.help.ui.HelpView" label="LabelNotFound"/>
 <page content="org.eclipse.ui.internal.introview" label="LabelNotFound"/>
 </folder>
 </info>
-<info folder="true" part="org.eclipse.ui.internal.ViewStack@67f809" ratio="0.70389885" ratioLeft="668" ratioRight="281" relationship="4" relative="org.eclipse.ui.internal.ViewStack@c5d83e">
-<folder appearance="2" expanded="0">
-<page content="org.eclipse.ui.console.ConsoleView" label="LabelNotFound"/>
+<info folder="true" part="org.eclipse.ui.internal.ViewStack@67f809" ratio="0.70389885" ratioLeft="668" ratioRight="281" relationship="4" relative="org.eclipse.ui.internal.ViewStack@c5d83e">&#x0A;<folder appearance="2" expanded="0">&#x0A;<page content="org.eclipse.ui.console.ConsoleView" label="LabelNotFound"/>
 <page content="org.eclipse.debug.ui.DebugView" label="LabelNotFound"/>
 <page content="org.eclipse.debug.ui.BreakpointView" label="LabelNotFound"/>
 <presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory"/>
 </folder>
 </info>
-<info folder="true" part="org.eclipse.ui.internal.ViewStack@d86a23" ratio="0.5" ratioLeft="956" ratioRight="956" relationship="2" relative="org.eclipse.ui.internal.ViewStack@67f809">
-<folder appearance="2" expanded="0">
-<page content="org.coocox.codebugger.trace.ui.traceview" label="LabelNotFound"/>
+<info folder="true" part="org.eclipse.ui.internal.ViewStack@d86a23" ratio="0.5" ratioLeft="956" ratioRight="956" relationship="2" relative="org.eclipse.ui.internal.ViewStack@67f809">&#x0A;<folder appearance="2" expanded="0">&#x0A;<page content="org.coocox.codebugger.trace.ui.traceview" label="LabelNotFound"/>
 <page content="org.eclipse.debug.ui.MemoryView" label="LabelNotFound"/>
 <page content="org.eclipse.cdt.debug.ui.memory.memorybrowser.MemoryBrowser" label="LabelNotFound"/>
 <page content="org.coocox.component.ui.view.ComponentView" label="LabelNotFound"/>
 <presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory"/>
 </folder>
 </info>
-<info folder="true" part="org.eclipse.ui.internal.ViewStack@1916de5" ratio="0.65302867" ratioLeft="1229" ratioRight="653" relationship="2" relative="org.eclipse.ui.internal.ViewStack@c5d83e">
-<folder activePageID="org.eclipse.debug.ui.ExpressionView" appearance="2" expanded="2">
-<page content="org.coocox.coassistant.view.CoAssistantView_debug" label="Peripherals"/>
+<info folder="true" part="org.eclipse.ui.internal.ViewStack@1916de5" ratio="0.5568544" ratioLeft="1048" ratioRight="834" relationship="2" relative="org.eclipse.ui.internal.ViewStack@c5d83e">&#x0A;<folder activePageID="org.eclipse.debug.ui.ExpressionView" appearance="2" expanded="2">&#x0A;<page content="org.coocox.coassistant.view.CoAssistantView_debug" label="Peripherals"/>
 <page content="org.eclipse.debug.ui.ExpressionView" label="Expressions"/>
 <page content="org.eclipse.debug.ui.VariableView" label="Variables"/>
 <page content="org.eclipse.cdt.dsf.debug.ui.disassembly.view" label="LabelNotFound"/>
 <page content="org.eclipse.ui.views.ContentOutline" label="LabelNotFound"/>
 <page content="org.eclipse.debug.ui.RegisterView" label="LabelNotFound"/>
-<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">
-<part id="0"/>
+<presentation id="org.eclipse.ui.presentations.WorkbenchPresentationFactory">&#x0A;<part id="0"/>
 <part id="1"/>
 <part id="2"/>
 </presentation>
@@ -310,166 +282,46 @@
 </perspective>
 </perspectives>
 <workingSets/>
-<navigationHistory>
-<editors>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/main.c"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/stm32f0xx_exti.c"/>
-<editor factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" path="/WiFiMotionDetector/components/stm32f0xx_gpio.h"/>
-</editors>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="58385" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16888" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="17141" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="62177" y="25"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="62336" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="62752" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="62177" y="25"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="59575" y="14"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="56683" y="11"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="57311" y="10"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="62637" y="0"/>
-</item>
-<item historyLabel="stm32f0xx_exti.c" index="1">
-<position info="not_deleted" x="6614" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="62425" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="56750" y="21"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="57754" y="0"/>
-</item>
-<item historyLabel="stm32f0xx_gpio.h" index="2">
-<position info="not_deleted" x="4143" y="8"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="57228" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="57842" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="62961" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16888" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16886" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="15673" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27051" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16888" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="26215" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="25204" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="25275" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="31582" y="39"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="21649" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27512" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27462" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27467" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27503" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27550" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27467" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27466" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="51195" y="22"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27074" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="27017" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="23785" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16942" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="26999" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="63711" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16942" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="24075" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="16942" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="17211" y="0"/>
-</item>
-<item historyLabel="main.c" index="0">
-<position info="not_deleted" x="17154" y="0"/>
-</item>
-<item active="true" historyLabel="main.c" index="0">
-<position info="not_deleted" x="16942" y="0"/>
-</item>
-</navigationHistory>
+<navigationHistory/>
 <input factoryID="org.eclipse.ui.internal.model.ResourceFactory" path="/" type="8"/>
 </page>
 <workbenchWindowAdvisor/>
 <actionBarAdvisor/>
 </window>
 <mruList>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" tooltip="WiFiMotionDetector_with_Immobilizer/main.c">
+<persistable path="/WiFiMotionDetector_with_Immobilizer/main.c"/>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_exti.c" tooltip="WiFiMotionDetector/stm32f0xx_exti.c">
 <persistable path="/WiFiMotionDetector/stm32f0xx_exti.c"/>
 </file>
@@ -487,30 +339,6 @@
 </file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_syscfg.h" tooltip="WiFiMotionDetector/components/stm32f0xx_syscfg.h">
 <persistable path="/WiFiMotionDetector/components/stm32f0xx_syscfg.h"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.s" tooltip="WiFiMotionDetector/components/startup_stm32f0xx.s">
-<persistable path="/WiFiMotionDetector/components/startup_stm32f0xx.s"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_gpio.h" tooltip="WiFiMotionDetector/components/stm32f0xx_gpio.h">
-<persistable path="/WiFiMotionDetector/components/stm32f0xx_gpio.h"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_iwdg.c" tooltip="WiFiMotionDetector/stm32f0xx_iwdg.c">
-<persistable path="/WiFiMotionDetector/stm32f0xx_iwdg.c"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="arm_power_q31.c" tooltip="WiFiMotionDetector/components/arm_power_q31.c">
-<persistable path="/WiFiMotionDetector/components/arm_power_q31.c"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_conf.h" tooltip="WiFiMotionDetector/stm32f0xx_conf.h">
-<persistable path="/WiFiMotionDetector/stm32f0xx_conf.h"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="arm_math.h" tooltip="WiFiMotionDetector/components/arm_math.h">
-<persistable path="/WiFiMotionDetector/components/arm_math.h"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_rcc.c" tooltip="WiFiMotionDetector/stm32f0xx_rcc.c">
-<persistable path="/WiFiMotionDetector/stm32f0xx_rcc.c"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_usart.c" tooltip="WiFiMotionDetector/stm32f0xx_usart.c">
-<persistable path="/WiFiMotionDetector/stm32f0xx_usart.c"/>
 </file>
 </mruList>
 </workbench>
