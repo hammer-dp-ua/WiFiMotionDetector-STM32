@@ -6,6 +6,7 @@
 #include "stm32f0xx.h"
 #include "arm_math.h"
 #include "stdlib.h"
+#include "device_settings.h"
 
 #define CLOCK_SPEED 16000000
 #define USART_BAUD_RATE 115200
@@ -102,8 +103,6 @@ unsigned int general_flags_g;
 
 char USART_OK[] __attribute__ ((section(".text.const"))) = "OK";
 char USART_ERROR[] __attribute__ ((section(".text.const"))) = "ERROR";
-char DEFAULT_ACCESS_POINT_NAME[] __attribute__ ((section(".text.const"))) = "Asus";
-char DEFAULT_ACCESS_POINT_PASSWORD[] __attribute__ ((section(".text.const"))) = "";
 char ESP8226_REQUEST_DISABLE_ECHO[] __attribute__ ((section(".text.const"))) = "ATE0\r\n";
 char ESP8226_RESPONSE_BUSY[] __attribute__ ((section(".text.const"))) = "busy";
 char ESP8226_REQUEST_GET_VISIBLE_NETWORK_LIST[] __attribute__ ((section(".text.const"))) = "AT+CWLAP\r\n";
@@ -123,9 +122,6 @@ char ESP8226_RESPONSE_SENDING[] __attribute__ ((section(".text.const"))) = "busy
 char ESP8226_RESPONSE_SUCCSESSFULLY_SENT[] __attribute__ ((section(".text.const"))) = "\r\nSEND OK\r\n";
 char ESP8226_RESPONSE_ALREADY_CONNECTED[] __attribute__ ((section(".text.const"))) = "ALREADY CONNECTED";
 char ESP8226_RESPONSE_PREFIX[] __attribute__ ((section(".text.const"))) = "+IPD";
-char ESP8226_OWN_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "192.168.0.20";
-char ESP8226_SERVER_IP_ADDRESS[] __attribute__ ((section(".text.const"))) = "192.168.0.2";
-char ESP8226_SERVER_PORT[] __attribute__ ((section(".text.const"))) = "80";
 char ESP8226_REQUEST_GET_CURRENT_DEFAULT_WIFI_MODE[] __attribute__ ((section(".text.const"))) = "AT+CWMODE_DEF?\r\n";
 char ESP8226_RESPONSE_WIFI_MODE_PREFIX[] __attribute__ ((section(".text.const"))) = "+CWMODE_DEF:";
 char ESP8226_RESPONSE_WIFI_STATION_MODE[] __attribute__ ((section(".text.const"))) = "1";
@@ -371,7 +367,6 @@ int main() {
    add_piped_task_to_send_into_tail(DISABLE_ECHO_FLAG);
    add_piped_task_to_send_into_tail(GET_CURRENT_DEFAULT_WIFI_MODE_FLAG);
    add_piped_task_to_send_into_tail(GET_OWN_IP_ADDRESS_FLAG);
-   add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
    add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_AND_CONNECT_FLAG);
    add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
 
@@ -518,11 +513,6 @@ int main() {
          execute_function_for_current_piped_task(current_piped_task_to_send, send_usart_data_passed_time_sec);
 
          check_connection_status_and_server_availability(&checking_connection_status_and_server_availability_timer_g);
-
-         if (!visible_network_list_timer_g) {
-            visible_network_list_timer_g = TIMER6_10MIN;
-            add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
-         }
 
          // LED blinking
          if (!read_flag(&general_flags_g, SUCCESSUFULLY_CONNECTED_TO_NETWORK_FLAG) && network_searching_status_led_counter_g >= TIMER3_100MS) {
