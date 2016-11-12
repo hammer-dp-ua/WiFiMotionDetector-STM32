@@ -671,6 +671,7 @@ void beep_and_schedule_alarm(unsigned char *beeper_counter) {
 void check_connection_status_and_server_availability(unsigned short *counter) {
    if (*counter == 0 && is_piped_tasks_scheduler_empty()) {
       *counter = TIMER6_30S;
+      add_piped_task_to_send_into_tail(GET_VISIBLE_NETWORK_LIST_FLAG);
       add_piped_task_to_send_into_tail(GET_CONNECTION_STATUS_FLAG);
       add_piped_task_to_send_into_tail(GET_SERVER_AVAILABILITY_FLAG);
    }
