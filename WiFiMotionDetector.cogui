@@ -29,7 +29,7 @@
 </editorArea>
 <editor activePart="true" focus="true" id="org.eclipse.cdt.ui.editor.CEditor" name="main.c" partName="main.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" title="main.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/main.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/main.c"/>
-<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="30965" selectionTopPixel="12445"/>
+<editorState selectionHorizontalPixel="0" selectionLength="0" selectionOffset="52856" selectionTopPixel="21831"/>
 </editor>
 <editor id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_usart.c" partName="stm32f0xx_usart.c" path="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_usart.c" title="stm32f0xx_usart.c" tooltip="D:/USER/CoIDE/workspace/WiFiMotionDetector/app/stm32f0xx_usart.c" workbook="DefaultEditorWorkbook">
 <input factoryID="org.eclipse.ui.part.FileEditorInputFactory" path="/WiFiMotionDetector/stm32f0xx_usart.c"/>
@@ -371,20 +371,51 @@
 <org.coocox.welcome.ui.WelcomePage/>
 </persistable>
 </file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="device_settings.h" tooltip="WiFiMotionDetector/device_settings.h">
-<persistable path="/WiFiMotionDetector/device_settings.h"/>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.coocox.builder.ui.persistent.PersistentElementFactory" id="org.coocox.welcome.ui.WelcomePage" name="" tooltip="">
+<persistable>
+<org.coocox.welcome.ui.WelcomePage/>
+</persistable>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.s" tooltip="WI-FI_Projector_switcher_executor/components/startup_stm32f0xx.s">
+<persistable path="/WI-FI_Projector_switcher_executor/components/startup_stm32f0xx.s"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_gpio.h" tooltip="WI-FI_Projector_switcher_executor/components/stm32f0xx_gpio.h">
+<persistable path="/WI-FI_Projector_switcher_executor/components/stm32f0xx_gpio.h"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_misc.c" tooltip="WiFiMotionDetector_with_Immobilizer/stm32f0xx_misc.c">
+<persistable path="/WiFiMotionDetector_with_Immobilizer/stm32f0xx_misc.c"/>
+</file>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_gpio.h" tooltip="WiFiMotionDetector_with_Immobilizer/components/stm32f0xx_gpio.h">
+<persistable path="/WiFiMotionDetector_with_Immobilizer/components/stm32f0xx_gpio.h"/>
 </file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.s" tooltip="WiFiMotionDetector_with_Immobilizer/components/startup_stm32f0xx.s">
 <persistable path="/WiFiMotionDetector_with_Immobilizer/components/startup_stm32f0xx.s"/>
 </file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="device_settings.h" tooltip="WiFiMotionDetector/device_settings.h">
-<persistable path="/WiFiMotionDetector/device_settings.h"/>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_tim.h" tooltip="WiFiMotionDetector_with_Immobilizer/components/stm32f0xx_tim.h">
+<persistable path="/WiFiMotionDetector_with_Immobilizer/components/stm32f0xx_tim.h"/>
 </file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.asm.AsmEditor" name="startup_stm32f0xx.s" tooltip="WiFiMotionDetector_with_Immobilizer/components/startup_stm32f0xx.s">
-<persistable path="/WiFiMotionDetector_with_Immobilizer/components/startup_stm32f0xx.s"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="device_settings.h" tooltip="WiFiMotionDetector/device_settings.h">
-<persistable path="/WiFiMotionDetector/device_settings.h"/>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.eclipse.cdt.ui.editor.CEditor" name="stm32f0xx_usart.c" tooltip="WiFiMotionDetector_with_Immobilizer/stm32f0xx_usart.c">
+<persistable path="/WiFiMotionDetector_with_Immobilizer/stm32f0xx_usart.c"/>
 </file>
 </mruList>
 </workbench>

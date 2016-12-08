@@ -1176,18 +1176,20 @@ void *get_received_usart_error_data() {
    for (unsigned char i = 0; i < received_data_length; i++) {
       char received_char = usart_data_received_buffer_g[i];
 
-      if (received_char == '\r') {
-         received_char = 'r';
-      } else if (received_char == '\n') {
-         received_char = 'n';
-      } else if (received_char == '\"') {
-         received_char = '\'';
-      } else if (received_char < ' ') {
-         received_char += 65; // Starts from 'A'
+      if (received_char <= '\"') {
+         if (received_char == '\r') {
+            received_char = 'r';
+         } else if (received_char == '\n') {
+            received_char = 'n';
+         } else if (received_char == '\"') {
+            received_char = '\'';
+         } else {
+            received_char += 65; // Starts from 'A'
+         }
       }
       *(result_string + i) = received_char;
    }
-   *(result_string + received_data_length + 1) = '\0';
+   *(result_string + received_data_length) = '\0';
    return result_string;
 }
 
