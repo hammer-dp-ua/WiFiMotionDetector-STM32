@@ -217,6 +217,8 @@ void on_successfully_receive_general_actions(unsigned int successfully_received_
 void prepare_http_request(char address[], char port[], char request[], void (*on_response)(), unsigned int request_task);
 void resend_usart_get_request_using_global_final_task();
 void *num_to_string(unsigned int number);
+unsigned int divide_by_10(unsigned int dividend);
+unsigned char get_first_digit(unsigned int long_digit);
 void *array_to_string(char array[], unsigned char array_length);
 void connect_to_server();
 void resend_usart_get_request(unsigned int final_task);
@@ -1619,49 +1621,87 @@ void *num_to_string(unsigned int number) {
       return result_string_pointer;
    }
 
-   unsigned char max_string_size;
-
-   if (number <= 0xFF) {
-      // unsigned char
-      max_string_size = 3;
-   } else if (number <= 0xFFFF) {
-      // unsigned short
-      max_string_size = 5;
-   } else if (number <= 0xFFFFFF) {
-      // unsigned int
-      max_string_size = 8;
-   } else {
-      // unsigned int
-      max_string_size = 10;
-   }
-
+   unsigned char string_size = 1;
    unsigned int divider = 1;
+   unsigned int divider_tmp = 10;
 
-   for (unsigned char i = 1; i < max_string_size; i++) {
-      divider *= 10;
+   for (unsigned char i = 0; divider_tmp <= number; i++) {
+      divider = divider_tmp;
+      divider_tmp *= 10;
+      string_size++;
    }
 
    unsigned int remaining = number;
    unsigned char string_length = 0;
 
-   while (max_string_size > 0) {
-      char result_character = (char) (remaining / divider);
+   while (string_size > 0) {
+      unsigned char last_digit_was_zero = 0;
+      if (remaining < divider) {
+         last_digit_was_zero = 1;
+      }
+      unsigned char result_character = last_digit_was_zero ? 0 : get_first_digit(remaining);
+      //unsigned char result_character = (unsigned char) (remaining / divider);
 
       if (result_string_pointer == NULL && result_character) {
-         result_string_pointer = malloc(max_string_size + 1);
-         string_length = max_string_size;
+         result_string_pointer = malloc(string_size + 1);
+         string_length = string_size;
       }
       if (result_string_pointer != NULL) {
-         unsigned char index = string_length - max_string_size;
-         *(result_string_pointer + index) = result_character + 48;
+         unsigned char index = string_length - string_size;
+         *(result_string_pointer + index) = result_character + '0';
       }
 
-      remaining -= result_character * divider;
-      divider /= 10;
-      max_string_size--;
+      if (!last_digit_was_zero) {
+         remaining -= result_character * divider;
+      }
+      divider = divide_by_10(divider);
+      //divider /= 10;
+      string_size--;
    }
    result_string_pointer[string_length] = '\0';
    return result_string_pointer;
+}
+
+/**
+ * Only 10, 100, 1000, e.t.c can be divided by 10
+ */
+unsigned int divide_by_10(unsigned int dividend) {
+   if (dividend < 10) {
+      return 0;
+   }
+
+   unsigned int subtrahend = 0;
+   unsigned int subtrahend_tmp = 9;
+
+   while (subtrahend_tmp < dividend) {
+      subtrahend = subtrahend_tmp;
+      subtrahend_tmp *= 10;
+   }
+   return dividend - subtrahend;
+}
+
+unsigned char get_first_digit(unsigned int long_digit) {
+   if (long_digit < 10) {
+      return (unsigned char) long_digit;
+   }
+
+   // Find the most subtrahend
+   unsigned int subtrahend = 0;
+   unsigned int subtrahend_tmp = 10;
+
+   while (subtrahend_tmp <= long_digit) {
+      subtrahend = subtrahend_tmp;
+      subtrahend_tmp *= 10;
+   }
+
+   unsigned char result = 1;
+   unsigned int remaining_result = long_digit - subtrahend;
+
+   while (remaining_result >= subtrahend) {
+      result++;
+      remaining_result -= subtrahend;
+   }
+   return result;
 }
 
 /**
